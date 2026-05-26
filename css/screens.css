@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOID PROTOCOL — css/screens.css
+   Estilos de pantallas de fallo, error de código, infección y muerte
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* CODE ERROR OVERLAY (Flashing Red Screen)                                    */
+/* ─────────────────────────────────────────────────────────────────────────── */
+#code-error-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+#code-error-screen.active {
+  opacity: 1;
+  pointer-events: all;
+  animation: errorFlashBg 0.3s ease-out;
+}
+
+.error-screen-box {
+  width: 90%;
+  max-width: 600px;
+  background: rgba(15, 0, 0, 0.9);
+  border: 2px solid var(--clr-danger);
+  box-shadow: 0 0 40px rgba(255, 32, 32, 0.5), inset 0 0 20px rgba(255, 32, 32, 0.2);
+  padding: 30px;
+  text-align: center;
+  border-radius: 4px;
+  animation: errorShake 0.4s ease-out;
+}
+
+.error-screen-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #ff3333;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.error-screen-title::before,
+.error-screen-title::after {
+  content: '⚠️';
+}
+
+.error-screen-log {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--clr-text-bright);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 32, 32, 0.3);
+  padding: 16px;
+  margin: 20px 0;
+  white-space: pre-wrap;
+  text-align: left;
+  line-height: 1.6;
+}
+
+.error-screen-action {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--clr-text-dim);
+  letter-spacing: 2px;
+  animation: pulse 1s infinite;
+  margin-top: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* DEATH SCREENS (Infected / Void Consumed)                                    */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.death-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.death-screen.active {
+  display: flex;
+  animation: fadeIn 0.5s ease-out both;
+}
+
+/* 1. Infected (MYCO-X) - Green/Yellow Organic Glitch */
+#infected-screen {
+  background: radial-gradient(ellipse at center, rgba(10, 40, 10, 0.98) 0%, #000500 100%);
+  border: 1px solid rgba(68, 255, 68, 0.1);
+}
+
+.death-logo {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 20px currentColor);
+}
+
+.death-logo.myco {
+  color: var(--clr-myco);
+  animation: organicPulse 3s ease-in-out infinite alternate;
+}
+
+.death-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.death-title.myco {
+  color: var(--clr-myco);
+  text-shadow: 0 0 15px rgba(68, 255, 68, 0.5);
+  animation: glitchFlicker 3s infinite;
+}
+
+/* 2. Void Consumed (NXVL-0) - Dark Purple Void */
+#void-consumed-screen {
+  background: radial-gradient(ellipse at center, rgba(15, 0, 30, 0.98) 0%, #000005 100%);
+}
+
+.death-logo.void {
+  color: var(--clr-nxvl);
+  animation: voidRotate 10s linear infinite;
+}
+
+.death-title.void {
+  color: var(--clr-nxvl);
+  text-shadow: 0 0 15px rgba(136, 0, 255, 0.5);
+}
+
+.death-description {
+  max-width: 500px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--clr-text-dim);
+  text-align: center;
+  line-height: 2;
+  margin-bottom: 30px;
+}
+
+.btn-retry {
+  padding: 14px 40px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--transition-med);
+  border: 1px solid;
+}
+
+.btn-retry.myco {
+  color: var(--clr-myco);
+  border-color: var(--clr-myco);
+}
+
+.btn-retry.myco:hover {
+  background: rgba(68, 255, 68, 0.1);
+  box-shadow: var(--glow-myco);
+  transform: translateY(-2px);
+}
+
+.btn-retry.void {
+  color: var(--clr-nxvl);
+  border-color: var(--clr-nxvl);
+}
+
+.btn-retry.void:hover {
+  background: rgba(136, 0, 255, 0.15);
+  box-shadow: var(--glow-nxvl);
+  transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* SCREEN SPECIFIC KEYFRAMES                                                   */
+/* ─────────────────────────────────────────────────────────────────────────── */
+@keyframes errorFlashBg {
+  0%   { background: rgba(255, 0, 0, 0.5); }
+  50%  { background: rgba(255, 0, 0, 1); }
+  100% { background: rgba(139, 0, 0, 0.95); }
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  10%      { transform: translateX(-8px) rotate(-1deg); }
+  30%      { transform: translateX(8px) rotate(1deg); }
+  50%      { transform: translateX(-10px) rotate(-1.5deg); }
+  70%      { transform: translateX(10px) rotate(1.5deg); }
+  90%      { transform: translateX(-4px) rotate(-0.5deg); }
+}
+
+@keyframes organicPulse {
+  0%   { transform: scale(1); filter: drop-shadow(0 0 10px rgba(68,255,68,0.3)); }
+  100% { transform: scale(1.08); filter: drop-shadow(0 0 25px rgba(68,255,68,0.7)); }
+}
+
+@keyframes voidRotate {
+  0%   { transform: scale(1) rotate(0deg); opacity: 0.8; }
+  50%  { transform: scale(1.15) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.8; }
+}

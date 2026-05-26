@@ -1,0 +1,345 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOID PROTOCOL — css/terminal.css
+   Estilos de la interfaz de la Terminal de Programación interactiva
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.terminal-window {
+  width: 90%;
+  max-width: 1100px;
+  height: 80vh;
+  background: rgba(5, 5, 15, 0.95);
+  border: 1px solid var(--clr-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 212, 255, 0.05);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.terminal-header {
+  height: 48px;
+  background: rgba(10, 10, 26, 0.9);
+  border-bottom: 1px solid var(--clr-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  font-family: var(--font-display);
+}
+
+.terminal-title {
+  color: var(--clr-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.terminal-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--clr-accent);
+  box-shadow: var(--glow-accent);
+  border-radius: 50%;
+}
+
+.terminal-header-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.terminal-btn-close {
+  background: none;
+  border: none;
+  color: var(--clr-text-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  transition: color var(--transition-fast);
+  padding: 4px 8px;
+}
+
+.terminal-btn-close:hover {
+  color: var(--clr-danger);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* TWO PANEL LAYOUT                                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Left panel: Lore and Mission Info */
+.terminal-info-panel {
+  width: 42%;
+  border-right: 1px solid var(--clr-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: rgba(8, 8, 20, 0.5);
+}
+
+.terminal-story-box {
+  padding: 24px;
+  border-bottom: 1px solid var(--clr-border);
+  background: rgba(127, 0, 255, 0.02);
+}
+
+.terminal-story-line {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: var(--clr-text-dim);
+  margin-bottom: 12px;
+}
+
+.terminal-story-line:last-child {
+  margin-bottom: 0;
+}
+
+.terminal-story-author {
+  color: var(--clr-warning);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.terminal-mission-box {
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.terminal-mission-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--clr-text-bright);
+}
+
+.terminal-description {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--clr-text);
+}
+
+.terminal-description code {
+  font-family: var(--font-mono);
+  color: var(--clr-accent);
+  background: rgba(0, 212, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.terminal-description ul {
+  margin-left: 20px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.terminal-description li {
+  font-size: 0.8rem;
+}
+
+.terminal-hint-box {
+  background: rgba(255, 136, 0, 0.05);
+  border: 1px dashed rgba(255, 136, 0, 0.3);
+  padding: 16px;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--clr-warning);
+}
+
+.terminal-hint-title {
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-hint-content {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+}
+
+/* Right panel: Editor and evaluation */
+.terminal-editor-panel {
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Simulated CodeMirror / Editor */
+.editor-container {
+  flex: 1;
+  background: #020208;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-gutter {
+  width: 45px;
+  background: #050512;
+  border-right: 1px solid var(--clr-border);
+  color: var(--clr-text-dim);
+  text-align: right;
+  padding: 16px 8px 16px 0;
+  user-select: none;
+  line-height: 1.7;
+}
+
+.editor-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--clr-text-bright);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  padding: 16px;
+  caret-color: var(--clr-accent);
+  tab-size: 2;
+  overflow-y: auto;
+}
+
+/* Editor instructions placeholder styling */
+.editor-textarea::placeholder {
+  color: var(--clr-text-dim);
+  opacity: 0.5;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* TERMINAL FOOTER & STATUS                                                    */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-footer {
+  height: 64px;
+  background: rgba(10, 10, 26, 0.95);
+  border-top: 1px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.terminal-status-log {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--clr-text-dim);
+  transition: color var(--transition-fast);
+}
+
+.terminal-status-log.success { color: var(--clr-success); }
+.terminal-status-log.error { color: var(--clr-danger); }
+
+.terminal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-terminal {
+  padding: 8px 20px;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--transition-med);
+  border: 1px solid;
+  text-transform: uppercase;
+}
+
+.btn-terminal.reset {
+  background: transparent;
+  border-color: var(--clr-border);
+  color: var(--clr-text-dim);
+}
+
+.btn-terminal.reset:hover {
+  border-color: var(--clr-text);
+  color: var(--clr-text);
+}
+
+.btn-terminal.run {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+}
+
+.btn-terminal.run:hover {
+  background: var(--clr-accent);
+  color: var(--clr-deep);
+  box-shadow: var(--glow-accent);
+}
+
+/* Guide trigger badge inside terminal description */
+.terminal-guide-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 255, 136, 0.04);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.terminal-guide-title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--clr-text-dim);
+  letter-spacing: 1px;
+}
+
+.terminal-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: var(--clr-success);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: fit-content;
+  text-align: left;
+}
+
+.terminal-guide-link:hover {
+  background: var(--clr-success);
+  color: var(--clr-deep);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}

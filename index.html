@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VOID PROTOCOL // Taller de Programación 3D</title>
+  <meta name="description" content="Aprende programación en HTML, CSS, JavaScript y TypeScript a bordo de una estación espacial infestada en una aventura survival horror 3D.">
+
+  <!-- Hojas de Estilo del Design System -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/hud.css">
+  <link rel="stylesheet" href="css/terminal.css">
+  <link rel="stylesheet" href="css/manual.css">
+  <link rel="stylesheet" href="css/screens.css">
+  <link rel="stylesheet" href="css/ui-improvements.css">
+  <link rel="stylesheet" href="css/horror.css">
+</head>
+<body>
+
+  <!-- Sirena / Scanlines generales sobre la pantalla -->
+  <div class="scanlines"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TITLE SCREEN
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <section id="title-screen">
+    <div class="starfield">
+      <div class="stars-layer"></div>
+    </div>
+
+    <div class="title-content">
+      <div class="title-badge">SISTEMA DE SIMULACION TACTICA // EREBUS-IX</div>
+
+      <div class="title-logo">
+        <h1>VOID PROTOCOL</h1>
+        <div class="title-sub">APRENDIZAJE DE PROTOCOLOS DE SEGURIDAD (JS/TS)</div>
+      </div>
+
+      <div class="title-lore">
+        <div class="lore-header">REGISTRO DE ADVERTENCIA BIO-ESPACIAL</div>
+        <p>
+          Año 2187. La estación minera ISS Erebus ha sido declarada en cuarentena absoluta. Un patógeno extraterrestre (MYCO-X) está devorando la carne y reprogramando la mente de la tripulación. Al mismo tiempo, una entidad del vacío (NXVL-0) consume la base de datos central.
+        </p>
+        <p style="margin-top: 8px; color: var(--clr-accent);">
+          Tu única forma de sobrevivir es interactuar con los núcleos del sistema a través de la terminal y solucionar los protocolos de código para escapar.
+        </p>
+      </div>
+
+      <!-- Selección de Personaje -->
+      <div class="character-select">
+        <div class="character-card aria-card">
+          <div class="char-portrait aria">👩‍🚀</div>
+          <div class="char-name">ARIA-7</div>
+          <div class="char-role">INGENIERA DE SOPORTE</div>
+        </div>
+
+        <div class="character-card nxvl-card locked">
+          <div class="lock-badge">BLOQUEADO</div>
+          <div class="char-portrait nxvl">👾</div>
+          <div class="char-name">NXVL-0</div>
+          <div class="char-role">ENTIDAD DEL VACÍO</div>
+        </div>
+      </div>
+
+      <button id="btn-play-game" class="btn-start">INICIAR ENLACE TÁCTICO</button>
+
+      <div class="title-footer">
+        © VANGUARD SPACE CORPORATION // MÁXIMA CONFIDENCIALIDAD
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       GAME VIEWPORT (THREE.JS CANVAS)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Viñeta de miedo / pulso cardíaco -->
+  <div id="fear-vignette-overlay"></div>
+
+  <!-- Flash de error de compilación -->
+  <div id="code-error-screen"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TACTICAL HUD OVERLAY
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="hud-container">
+    <!-- Top HUD panel: Locación, objetivos y reloj -->
+    <div class="hud-top">
+      <div class="hud-panel hud-status-panel">
+        <div id="hud-chapter-label" class="hud-chapter">CAPÍTULO I — PROTOCOLO HTML</div>
+        <div id="hud-location-label" class="hud-location">DECK 04 // BAHÍA DE INGENIERÍA</div>
+        <div id="hud-objective-label" class="hud-objective">Reinicia la Terminal Alpha (T1) — HTML</div>
+      </div>
+
+      <div class="hud-panel hud-diagnostics-panel">
+        <div class="hud-time-label">TIEMPO DE OPERACIÓN</div>
+        <div id="hud-timer-val" class="hud-time-value">00:00</div>
+      </div>
+
+      <!-- Visor térmico táctico -->
+      <div id="thermal-radar-panel" class="hud-panel hud-radar-panel">
+        <div class="radar-header">
+          <span class="radar-title">VISOR TÉRMICO</span>
+          <span id="radar-blip-count" class="radar-status">SECTOR LIMPIO</span>
+        </div>
+        <canvas id="thermal-radar-canvas" width="130" height="130"></canvas>
+        <div class="radar-legend">
+          <span class="blip-walker">● Caminante</span>
+          <span class="blip-crawler">● Arrastrador</span>
+          <span class="blip-void">● NXVL-0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mira central para inmersión FPP -->
+    <div class="hud-crosshair"></div>
+
+    <!-- Letrero de interacción flotante -->
+    <div id="interaction-prompt">PULSA [E] PARA INTERACTUAR</div>
+
+    <!-- Filtro indicador de peligro del vacío -->
+    <div id="void-warning-overlay"></div>
+
+    <!-- Toast narrativo al entrar en cubiertas -->
+    <div id="hud-lore-toast" class="hud-lore-toast"></div>
+
+    <!-- Bottom HUD panel: Estadísticas de vida y recordatorio de teclas -->
+    <div class="hud-bottom">
+      <div class="hud-panel hud-vital-panel">
+        <!-- Barra de Salud -->
+        <div class="hud-vital-row">
+          <div class="hud-vital-header">
+            <span class="hud-vital-name">SOPORTE VITAL (ARIA-7)</span>
+            <span id="hud-health-val" class="hud-vital-value">100%</span>
+          </div>
+          <div class="hud-vital-bar-bg">
+            <div id="hud-health-fill" class="hud-vital-bar-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Barra de Infección fúngica -->
+        <div class="hud-vital-row">
+          <div class="hud-vital-header">
+            <span class="hud-vital-name" style="color: var(--clr-myco);">INFECCIÓN BIO-FÚNGICA</span>
+            <span id="hud-infect-val" class="hud-vital-value" style="color: var(--clr-myco);">0%</span>
+          </div>
+          <div class="hud-vital-bar-bg">
+            <div id="hud-infect-fill" class="hud-vital-bar-fill myco" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-panel hud-controls-panel">
+        <div class="hud-control-item">
+          <span>MOVIMIENTO</span>
+          <span class="hud-key">W A S D</span>
+        </div>
+        <div class="hud-control-item">
+          <span>CODEX / MANUAL</span>
+          <span class="hud-key">M</span>
+        </div>
+        <div class="hud-control-item">
+          <span>INTERACTUAR</span>
+          <span class="hud-key">E</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Registro de voz coleccionable -->
+  <div id="lore-log-overlay" class="overlay">
+    <div class="lore-log-window">
+      <div class="lore-log-header">
+        <div>
+          <div id="lore-log-title" class="lore-log-title">Registro</div>
+          <div id="lore-log-date" class="lore-log-date"></div>
+          <div id="lore-log-location" class="lore-log-location"></div>
+        </div>
+        <button id="lore-log-close" class="lore-log-close">CERRAR [ESC]</button>
+      </div>
+      <div id="lore-log-body" class="lore-log-body"></div>
+      <div id="lore-log-speaker" class="lore-log-speaker"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       INTERACTIVE CODING TERMINAL (MODAL)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="terminal-overlay" class="overlay">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <div id="term-title" class="terminal-title">TERMINAL ALPHA // RECONECTANDO...</div>
+        <div class="terminal-header-controls">
+          <button id="term-btn-close" class="terminal-btn-close">[ ESCAPE / CERRAR ]</button>
+        </div>
+      </div>
+
+      <div class="terminal-body">
+        <!-- Panel izquierdo: Lore + Explicación del problema -->
+        <div class="terminal-info-panel">
+          <div id="term-story-box" class="terminal-story-box">
+            <!-- Rellenado dinámicamente con logs del lore -->
+          </div>
+          <div class="terminal-mission-box">
+            <div id="term-mission-title" class="terminal-mission-title">PROTOCOLO-01 // CARGAR ESTRUCTURA</div>
+            <div id="term-description" class="terminal-description">
+              <!-- Cargado dinámicamente -->
+            </div>
+            <div id="term-hint" class="terminal-hint-box">
+              <div class="terminal-hint-title">💡 SUGERENCIA DEL SISTEMA</div>
+              <div class="terminal-hint-content">Sugerencia de código aquí.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel derecho: Simulador de Editor de Código -->
+        <div class="terminal-editor-panel">
+          <div class="editor-container">
+            <div id="term-editor-gutter" class="editor-gutter">1</div>
+            <textarea id="term-editor-textarea" class="editor-textarea" spellcheck="false" placeholder="// Escribe tu código aquí..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie de página de la terminal -->
+      <div class="terminal-footer">
+        <div id="term-status-log" class="terminal-status-log">ESPERANDO COMPILACIÓN DE PROTOCOLO...</div>
+        <div class="terminal-actions">
+          <button id="term-btn-reset" class="btn-terminal reset">RESTAURAR PROTOCOLO</button>
+          <button id="term-btn-run" class="btn-terminal run">EVALUAR Y ENVIAR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       CODEX / MANUAL EDUCATIVO DE CONSULTA
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="manual-overlay" class="overlay">
+    <div class="manual-window">
+      <div class="manual-header">
+        <div class="manual-title">MANUAL TÉCNICO VANGUARD CORE v4.1</div>
+        <div class="manual-header-controls">
+          <button id="manual-btn-close" class="manual-btn-close">CERRAR MANUAL [M]</button>
+        </div>
+      </div>
+
+      <div class="manual-body">
+        <!-- Menú de temas por categoría -->
+        <nav id="manual-sidebar-list" class="manual-sidebar">
+          <!-- Renderizado dinámicamente -->
+        </nav>
+
+        <!-- Visualizador del contenido educativo -->
+        <main id="manual-content-view" class="manual-content-view">
+          <!-- Rellenado con las especificaciones del concepto -->
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       CUTSCENE OVERLAY
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="cutscene-overlay" class="overlay">
+    <div class="cutscene-header">
+      <span class="cutscene-chapter-label">REGISTRO DE TRANSMISION</span>
+      <button class="cutscene-skip">SALTAR NARRACION [SPACE]</button>
+    </div>
+
+    <div class="cutscene-body">
+      <div class="cutscene-portrait">👩‍🚀</div>
+      <div class="cutscene-text-area">
+        <div class="cutscene-title">ARIA-7</div>
+        <div class="cutscene-subtitle">SOPORTE TÉCNICO ISS EREBUS</div>
+        <div class="cutscene-text">
+          Conectando canal de audio...
+        </div>
+      </div>
+    </div>
+
+    <div class="cutscene-footer">
+      <div class="cutscene-dots">
+        <!-- Puntos interactivos -->
+      </div>
+      <button class="btn-next">SIGUIENTE</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       DEATH OVERLAYS (MYCO-X INFECTED)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="infected-screen" class="death-screen">
+    <div class="death-logo myco">☣️</div>
+    <div class="death-title myco">SOPORTE VITAL COMPROMETIDO</div>
+    <div class="death-description">
+      Las esporas de la muestra MYCO-X colonizaron el sistema circulatorio del sujeto ARIA-7. El ADN humano se ha desintegrado en favor del micelio invasivo. Te has convertido en otro Caminante en las entrañas de la Erebus.
+    </div>
+    <button class="btn-retry myco">RESTABLECER ÚLTIMO CLON</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       DEATH OVERLAYS (VOID CONSCIOUSNESS DRAIN)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="void-consumed-screen" class="death-screen">
+    <div class="death-logo void">🌌</div>
+    <div class="death-title void">CONSCIENCIA DILUIDA EN EL VACÍO</div>
+    <div class="death-description">
+      El ente NXVL-0 ha corrompido la integridad cognitiva del operador. Los recuerdos, el código y la consciencia biológica han sido adsorbidos como simples bits estáticos dentro del vacío dimensional de la estrella colapsada.
+    </div>
+    <button class="btn-retry void">RESTABLECER ÚLTIMO CLON</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       WIN SCREEN
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="win-screen">
+    <div class="win-content">
+      <div class="win-icon">🚀</div>
+      <div class="win-title">CÁPSULA DE ESCAPE INICIALIZADA</div>
+      <div class="win-subtitle">
+        Despegue exitoso. La compuerta de la ISS Erebus se ha cerrado. Atrás queda la radiación, la entidad del vacío y la mutación de la tripulación. Los datos de contención recopilados están a salvo en tu computadora espacial rumbo a la Tierra.
+      </div>
+
+      <div class="win-stats">
+        <div class="win-stat">
+          <div id="win-time" class="win-stat-value">05:42</div>
+          <div class="win-stat-label">TIEMPO DE ESCAPE</div>
+        </div>
+        <div class="win-stat">
+          <div id="win-errors" class="win-stat-value">6</div>
+          <div class="win-stat-label">PROTOCOLOS COMPILADOS</div>
+        </div>
+        <div class="win-stat">
+          <div id="win-logs" class="win-stat-value">0/4</div>
+          <div class="win-stat-label">REGISTROS DE VOZ</div>
+        </div>
+      </div>
+
+      <div class="win-actions">
+        <button id="btn-win-restart" class="btn-win primary">REPETIR SIMULACIÓN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       CARGA DE ARCHIVOS DE BIBLIOTECA Y LOGICA DE JUEGO
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Datos del Juego -->
+  <script src="data/challenges.js"></script>
+  <script src="data/manual-data.js"></script>
+  <script src="data/lore-data.js"></script>
+
+  <!-- Controladores Lógicos -->
+  <script src="js/utils.js"></script>
+  <script src="js/sprite-generator.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/radar.js"></script>
+  <script src="js/ambient.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/lore.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/terminal.js"></script>
+  <script src="js/manual.js"></script>
+  <script src="js/levels.js"></script>
+
+  <!-- Bucle Principal -->
+  <script src="js/main.js"></script>
+</body>
+</html>
+
+
+
+
+

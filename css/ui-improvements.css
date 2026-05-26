@@ -1,0 +1,416 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOID PROTOCOL — css/ui-improvements.css
+   Mejoras de UX/UI para interfaz de código y elementos visuales
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* MEJORAS AL EDITOR DE TERMINAL */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.editor-container {
+  background: linear-gradient(135deg, #020208 0%, #0a0510 100%);
+  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.05);
+  position: relative;
+}
+
+.editor-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 212, 255, 0.03) 0px,
+    rgba(0, 212, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Mejora al textarea del editor */
+.editor-textarea {
+  background: transparent;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  padding: 20px !important;
+  border: none;
+  border-left: 3px solid #00ff88;
+  resize: none;
+  position: relative;
+  z-index: 2;
+  scrollbar-width: thin;
+  scrollbar-color: #00d4ff #0a0510;
+}
+
+.editor-textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.1);
+  text-shadow: 0 0 15px rgba(0, 212, 255, 0.5), 0 0 30px rgba(0, 212, 255, 0.2);
+}
+
+.editor-textarea::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: #00d4ff;
+}
+
+/* Números de línea mejorados */
+.editor-lines {
+  background: rgba(10, 5, 16, 0.8);
+  border-right: 1px solid var(--clr-border);
+  color: var(--clr-text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 20px 12px;
+  text-align: right;
+  min-width: 45px;
+  user-select: none;
+  position: relative;
+  z-index: 2;
+}
+
+.editor-lines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 212, 255, 0.02) 0px,
+    rgba(0, 212, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* BOTONES MEJORADOS */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-btn-evaluate,
+.terminal-btn-restore {
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+
+.terminal-btn-evaluate {
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  color: #000;
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+
+.terminal-btn-evaluate:hover {
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.7), 0 0 50px rgba(0, 212, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.terminal-btn-evaluate:active {
+  transform: translateY(0);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.terminal-btn-restore {
+  background: linear-gradient(135deg, #ff8800 0%, #cc6600 100%);
+  color: #fff;
+  border: 1px solid #ff8800;
+  box-shadow: 0 0 15px rgba(255, 136, 0, 0.3);
+}
+
+.terminal-btn-restore:hover {
+  box-shadow: 0 0 25px rgba(255, 136, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* PANEL DE INFO MEJORADO */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-info-panel {
+  background: linear-gradient(180deg, rgba(8, 8, 20, 0.6) 0%, rgba(5, 5, 15, 0.8) 100%);
+}
+
+.terminal-mission-box {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.03) 0%, rgba(127, 0, 255, 0.03) 100%);
+  border-radius: 4px;
+  border-left: 3px solid var(--clr-accent);
+  padding: 20px;
+}
+
+.terminal-hint-box {
+  background: linear-gradient(135deg, rgba(255, 136, 0, 0.08) 0%, rgba(255, 136, 0, 0.02) 100%);
+  border: 1px solid rgba(255, 136, 0, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(255, 136, 0, 0.1);
+  transition: all var(--transition-med);
+}
+
+.terminal-hint-box:hover {
+  background: linear-gradient(135deg, rgba(255, 136, 0, 0.12) 0%, rgba(255, 136, 0, 0.03) 100%);
+  box-shadow: 0 0 20px rgba(255, 136, 0, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* ESTADO DE COMPILACIÓN MEJORADO */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-compile-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--clr-border);
+  background: rgba(10, 10, 26, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  animation: pulse-status 2s infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% {
+    background: rgba(10, 10, 26, 0.6);
+  }
+  50% {
+    background: rgba(10, 10, 26, 0.8);
+  }
+}
+
+.compile-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.compile-indicator.waiting {
+  background: #ff8800;
+  animation: blink 1s infinite;
+}
+
+.compile-indicator.success {
+  background: #00ff88;
+  animation: pulse-success 0.6s ease-out;
+}
+
+.compile-indicator.error {
+  background: #ff2020;
+  animation: pulse-error 0.4s ease-out;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes pulse-success {
+  0% {
+    box-shadow: 0 0 10px #00ff88;
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 30px #00ff88;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes pulse-error {
+  0% {
+    box-shadow: 0 0 10px #ff2020;
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 30px #ff2020;
+    transform: scale(1.2);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* MEJORAS AL HUD */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.hud-vital-bar-fill {
+  background: linear-gradient(90deg, #00ff88 0%, #00d4ff 100%);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.hud-vital-bar-fill.myco {
+  background: linear-gradient(90deg, #44ff44 0%, #00ff88 100%);
+  box-shadow: 0 0 10px rgba(68, 255, 68, 0.5);
+}
+
+.hud-vital-bar-bg {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Panel de controles mejorado */
+.hud-controls-panel {
+  background: linear-gradient(180deg, rgba(10, 10, 26, 0.7) 0%, rgba(5, 5, 15, 0.9) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 4px;
+}
+
+.hud-control-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  transition: all var(--transition-fast);
+}
+
+.hud-control-item:last-child {
+  border-bottom: none;
+}
+
+.hud-control-item:hover {
+  background: rgba(0, 212, 255, 0.05);
+  transform: translateX(4px);
+}
+
+.hud-key {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--clr-accent);
+  font-size: 0.75rem;
+  box-shadow: 0 2px 5px rgba(0, 212, 255, 0.1);
+  transition: all var(--transition-fast);
+}
+
+.hud-control-item:hover .hud-key {
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  background: rgba(0, 212, 255, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* EFECTOS DE TRANSICIÓN Y ANIMACIÓN */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.terminal-window.active {
+  animation: terminal-appear 0.5s ease-out;
+}
+
+@keyframes terminal-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Efecto de código tipeándose */
+@keyframes type-effect {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Pulsación de texto importante */
+@keyframes highlight-pulse {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+  }
+}
+
+.important-text {
+  animation: highlight-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* RESPONSIVIDAD Y ACCESIBILIDAD */
+/* ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .terminal-window {
+    max-width: 95%;
+    height: 85vh;
+  }
+
+  .terminal-info-panel {
+    width: 50%;
+  }
+
+  .terminal-editor-panel {
+    width: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .terminal-window {
+    height: 90vh;
+    flex-direction: column;
+  }
+
+  .terminal-body {
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .terminal-info-panel {
+    width: 100%;
+    height: 40%;
+    border-right: none;
+    border-bottom: 1px solid var(--clr-border);
+  }
+
+  .terminal-editor-panel {
+    width: 100%;
+    height: 60%;
+  }
+
+  .editor-textarea {
+    font-size: 0.8rem;
+  }
+}
+
+/* Mejora de scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 26, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.7);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}

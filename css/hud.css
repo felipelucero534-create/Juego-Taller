@@ -1,0 +1,302 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOID PROTOCOL — css/hud.css
+   Estilos para la interfaz de visualización frontal (HUD) del juego
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#hud-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  font-family: var(--font-mono);
+  box-sizing: border-box;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* TOP HUD BAR                                                                 */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.hud-panel {
+  background: rgba(5, 5, 20, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--clr-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  padding: 12px 18px;
+  border-radius: 2px;
+  pointer-events: auto;
+  position: relative;
+}
+
+.hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--clr-accent);
+}
+
+/* Location and Objective Panel */
+.hud-status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 250px;
+}
+
+.hud-location {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--clr-text-bright);
+  text-transform: uppercase;
+}
+
+.hud-objective {
+  font-size: 0.75rem;
+  color: var(--clr-warning);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-objective::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clr-warning);
+  animation: pulse 1.5s infinite;
+}
+
+/* System diagnostics / Timer */
+.hud-diagnostics-panel {
+  text-align: right;
+  min-width: 220px;
+}
+
+.hud-diagnostics-panel::before {
+  left: auto;
+  right: 0;
+  background: var(--clr-accent2);
+}
+
+.hud-time-label {
+  font-size: 0.7rem;
+  color: var(--clr-text-dim);
+  letter-spacing: 1px;
+}
+
+.hud-time-value {
+  font-size: 1.2rem;
+  color: var(--clr-text-bright);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* BOTTOM HUD BAR                                                              */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.hud-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* Player Status Bars (Health / Infection) */
+.hud-vital-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+}
+
+.hud-vital-panel::before {
+  background: var(--clr-success);
+}
+
+.hud-vital-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-vital-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}
+
+.hud-vital-name {
+  color: var(--clr-text-dim);
+}
+
+.hud-vital-value {
+  font-weight: bold;
+}
+
+.hud-vital-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(30, 30, 74, 0.4);
+  border: 1px solid var(--clr-border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.hud-vital-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--clr-success);
+  transition: width var(--transition-med);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.hud-vital-bar-fill.danger {
+  background: var(--clr-danger);
+  box-shadow: var(--glow-danger);
+}
+
+.hud-vital-bar-fill.myco {
+  background: var(--clr-myco);
+  box-shadow: var(--glow-myco);
+}
+
+.hud-vital-bar-fill.nxvl {
+  background: var(--clr-nxvl);
+  box-shadow: var(--glow-nxvl);
+}
+
+/* Controls reminder and Codex button */
+.hud-controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--clr-text);
+  min-width: 250px;
+}
+
+.hud-controls-panel::before {
+  background: var(--clr-warning);
+}
+
+.hud-control-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed rgba(30, 30, 74, 0.5);
+  padding-bottom: 4px;
+}
+
+.hud-key {
+  color: var(--clr-accent);
+  font-weight: bold;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  padding: 0 6px;
+  border-radius: 2px;
+  background: rgba(0, 212, 255, 0.05);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* CROSSHAIR AND DANGER FLOATER                                                */
+/* ─────────────────────────────────────────────────────────────────────────── */
+.hud-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hud-crosshair::before,
+.hud-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 212, 255, 0.6);
+  box-shadow: var(--glow-accent);
+}
+
+.hud-crosshair::before {
+  width: 2px;
+  height: 12px;
+}
+
+.hud-crosshair::after {
+  width: 12px;
+  height: 2px;
+}
+
+/* Void distortion / warning proximity */
+#void-warning-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  box-shadow: inset 0 0 100px rgba(136, 0, 255, 0);
+  transition: box-shadow var(--transition-slow);
+}
+
+#void-warning-overlay.near {
+  box-shadow: inset 0 0 80px rgba(136, 0, 255, 0.35);
+  animation: mycoPulse 2s ease-in-out infinite alternate;
+}
+
+#void-warning-overlay.critical {
+  box-shadow: inset 0 0 120px rgba(136, 0, 255, 0.7);
+  animation: voidPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes mycoPulse {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@keyframes voidPulse {
+  0% { opacity: 0.5; transform: scale(1.01); }
+  100% { opacity: 1; transform: scale(0.99); }
+}
+
+/* Interaction prompt */
+#interaction-prompt {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(5, 5, 20, 0.85);
+  border: 1px solid var(--clr-accent);
+  color: var(--clr-accent);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  box-shadow: var(--glow-accent);
+  border-radius: 2px;
+  display: none;
+  z-index: 105;
+  pointer-events: none;
+}
+
+#interaction-prompt.active {
+  display: block;
+  animation: glitchFlicker 2s infinite;
+}
