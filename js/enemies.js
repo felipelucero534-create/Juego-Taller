@@ -23,6 +23,14 @@ class Enemy {
     this.bobPhase = Math.random() * Math.PI * 2;
 
     this.build3DModel();
+
+    // Habilitar sombras en todos los componentes del enemigo
+    this.mesh.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
   }
 
   // Crea la estructura visual 3D (a base de primitivas encajadas)

@@ -101,21 +101,56 @@ class MapSystem {
     this.decorLights = [];
 
     const wallTex = UTILS.createMetalWallTexture();
+    const wallBumpTex = UTILS.createMetalWallBumpTexture();
+    const wallRoughTex = UTILS.createMetalWallRoughnessTexture();
+
     const floorTex = UTILS.createFloorTexture();
+    const floorBumpTex = UTILS.createFloorBumpTexture();
+    const floorRoughTex = UTILS.createFloorRoughnessTexture();
+
     const ceilingTex = UTILS.createCeilingTexture();
-    [wallTex, floorTex, ceilingTex].forEach((t) => {
+    const ceilingBumpTex = UTILS.createCeilingBumpTexture();
+
+    [wallTex, wallBumpTex, wallRoughTex, floorTex, floorBumpTex, floorRoughTex, ceilingTex, ceilingBumpTex].forEach((t) => {
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
     });
 
     const zoneFloorMats = {};
     for (const key of ['eng', 'medbay', 'bridge', 'escape', 'lab']) {
       const zTex = UTILS.createZoneFloorTexture(this.getZoneColorHex(key), key.toUpperCase());
-      zoneFloorMats[key] = new THREE.MeshStandardMaterial({ map: zTex, roughness: 0.65, metalness: 0.75 });
+      zoneFloorMats[key] = new THREE.MeshStandardMaterial({ 
+        map: zTex, 
+        bumpMap: floorBumpTex,
+        bumpScale: 0.04,
+        roughnessMap: floorRoughTex,
+        roughness: 0.65, 
+        metalness: 0.75 
+      });
     }
 
-    const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.8, metalness: 0.6 });
-    const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.7, metalness: 0.7 });
-    const ceilingMaterial = new THREE.MeshStandardMaterial({ map: ceilingTex, roughness: 0.6, metalness: 0.5 });
+    const wallMaterial = new THREE.MeshStandardMaterial({ 
+      map: wallTex, 
+      bumpMap: wallBumpTex,
+      bumpScale: 0.07,
+      roughnessMap: wallRoughTex,
+      roughness: 0.8, 
+      metalness: 0.65 
+    });
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+      map: floorTex, 
+      bumpMap: floorBumpTex,
+      bumpScale: 0.05,
+      roughnessMap: floorRoughTex,
+      roughness: 0.7, 
+      metalness: 0.7 
+    });
+    const ceilingMaterial = new THREE.MeshStandardMaterial({ 
+      map: ceilingTex, 
+      bumpMap: ceilingBumpTex,
+      bumpScale: 0.05,
+      roughness: 0.65, 
+      metalness: 0.5 
+    });
     const wallGeo = new THREE.BoxGeometry(this.tileSize, this.wallHeight, this.tileSize);
     const floorGeo = new THREE.PlaneGeometry(this.tileSize, this.tileSize);
     const trimGeo = new THREE.BoxGeometry(this.tileSize, 0.15, this.tileSize);
@@ -132,11 +167,13 @@ class MapSystem {
           const floorMesh = new THREE.Mesh(floorGeo, mat);
           floorMesh.rotation.x = -Math.PI / 2;
           floorMesh.position.set(x, 0, z);
+          floorMesh.receiveShadow = true;
           scene.add(floorMesh);
 
           const ceilingMesh = new THREE.Mesh(floorGeo, ceilingMaterial);
           ceilingMesh.rotation.x = Math.PI / 2;
           ceilingMesh.position.set(x, this.wallHeight, z);
+          ceilingMesh.receiveShadow = true;
           scene.add(ceilingMesh);
 
           if (zone && (c + r) % 4 === 0) this.createCeilingPipe(scene, x, z);
@@ -144,8 +181,27 @@ class MapSystem {
         }
 
         if (val === '1' || val === 'K') {
-          const wallMesh = new THREE.Mesh(wallGeo, wallMaterial);
+          // Si es zona infectada, crear muro con textura de emisión bioluminiscente
+          let mat = wallMaterial;
+          if (zone === 'lab' || zone === 'eng') {
+            const emissiveTex = UTILS.createWallEmissiveTexture(zone, zone === 'lab' ? 0xff2244 : 0x44ff88);
+            emissiveTex.wrapS = emissiveTex.wrapT = THREE.RepeatWrapping;
+            mat = new THREE.MeshStandardMaterial({
+              map: wallTex,
+              bumpMap: wallBumpTex,
+              bumpScale: 0.07,
+              roughnessMap: wallRoughTex,
+              emissiveMap: emissiveTex,
+              emissive: zone === 'lab' ? 0xff2244 : 0x44ff88,
+              emissiveIntensity: 0.6,
+              roughness: 0.8,
+              metalness: 0.65
+            });
+          }
+          const wallMesh = new THREE.Mesh(wallGeo, mat);
           wallMesh.position.set(x, this.wallHeight / 2, z);
+          wallMesh.castShadow = true;
+          wallMesh.receiveShadow = true;
           scene.add(wallMesh);
           this.colliders.push(new THREE.Box3().setFromObject(wallMesh));
 
@@ -160,6 +216,8 @@ class MapSystem {
             });
             const trim = new THREE.Mesh(trimGeo, trimMat);
             trim.position.set(x, 0.08, z);
+            trim.castShadow = true;
+            trim.receiveShadow = true;
             scene.add(trim);
           }
         } else if (val === 'S') {
@@ -203,6 +261,12 @@ class MapSystem {
     lights.forEach((l) => {
       const pl = new THREE.PointLight(l.color, l.i, l.d);
       pl.position.set(l.x * this.tileSize, 3.5, l.z * this.tileSize);
+      pl.castShadow = true;
+      pl.shadow.mapSize.width = 512;
+      pl.shadow.mapSize.height = 512;
+      pl.shadow.camera.near = 0.5;
+      pl.shadow.camera.far = 30;
+      pl.shadow.bias = -0.002;
       scene.add(pl);
     });
   }
@@ -300,7 +364,7 @@ class MapSystem {
     fixture.add(light);
     fixture.position.set(x, 0, z);
     scene.add(fixture);
-    this.decorLights.push({ light, baseIntensity: 0.55, phase: Math.random() * Math.PI * 2 });
+    this.decorLights.push({ light, baseIntensity: 0.55, phase: Math.random() * Math.PI * 2, zoneKey });
   }
 
   createCeilingPipe(scene, x, z) {
@@ -359,6 +423,8 @@ class MapSystem {
     );
     crate.position.set(x + UTILS.rand(-0.4, 0.4), 0.55, z + UTILS.rand(-0.4, 0.4));
     crate.rotation.y = UTILS.rand(0, Math.PI);
+    crate.castShadow = true;
+    crate.receiveShadow = true;
     scene.add(crate);
     this.colliders.push(new THREE.Box3().setFromObject(crate));
   }
@@ -405,6 +471,12 @@ class MapSystem {
 
     termGroup.add(new THREE.PointLight(accent, 2.5, 7).translateY(1.5));
     termGroup.position.set(x, 0, z);
+    termGroup.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
     scene.add(termGroup);
 
     this.terminals.push({
@@ -420,25 +492,137 @@ class MapSystem {
 
   createDoor3D(scene, x, z, val) {
     const doorLabels = { D1: 'NORTE → MEDBAY', D2: 'PUENTE DE MANDO', D3: 'MÓDULO M-7' };
-    const colors = { D1: '#44ff88', D2: '#ff8800', D3: '#cc44ff' };
+    const colorHex  = { D1: '#44ff88', D2: '#ff8800', D3: '#cc44ff' };
+    const colorInt  = { D1: 0x44ff88,  D2: 0xff8800,  D3: 0xcc44ff  };
+    const col = colorInt[val]  || 0x00d4ff;
+    const hex = colorHex[val]  || '#00d4ff';
+
     const doorGroup = new THREE.Group();
+
+    /* ── Paneles de la puerta ── */
     const panelGeo = new THREE.BoxGeometry(1.9, this.wallHeight, 0.3);
-    const panelMat = new THREE.MeshStandardMaterial({ map: UTILS.createDoorTexture(colors[val]), metalness: 0.8, roughness: 0.4 });
+    const panelMat = new THREE.MeshStandardMaterial({
+      map: UTILS.createDoorTexture(hex),
+      metalness: 0.85,
+      roughness: 0.3,
+      emissive: col,
+      emissiveIntensity: 0.08
+    });
 
     const leftPanel = new THREE.Mesh(panelGeo, panelMat);
     leftPanel.position.set(-0.95, this.wallHeight / 2, 0);
+    leftPanel.castShadow = true;
+    leftPanel.receiveShadow = true;
     doorGroup.add(leftPanel);
+
     const rightPanel = new THREE.Mesh(panelGeo, panelMat);
     rightPanel.position.set(0.95, this.wallHeight / 2, 0);
+    rightPanel.castShadow = true;
+    rightPanel.receiveShadow = true;
     doorGroup.add(rightPanel);
 
-    const sign = this.makeSignMesh(doorLabels[val] || val, 'COMP. SEGURIDAD', colors[val]);
-    sign.position.set(0, 0, -1.5);
-    sign.scale.set(0.7, 0.7, 0.7);
-    doorGroup.add(sign);
+    /* ── Tiras de neón verticales en los bordes ── */
+    const neonGeo = new THREE.BoxGeometry(0.06, this.wallHeight, 0.06);
+    const neonMat = new THREE.MeshStandardMaterial({
+      color: col, emissive: col, emissiveIntensity: 3.5, metalness: 0
+    });
+    [-1.92, -0.02, 0.02, 1.92].forEach(nx => {
+      const strip = new THREE.Mesh(neonGeo, neonMat);
+      strip.position.set(nx, this.wallHeight / 2, 0);
+      doorGroup.add(strip);
+    });
 
+    /* ── Luz de estado (roja = cerrada, verde = abierta) ── */
+    const statusGeo = new THREE.SphereGeometry(0.12, 8, 8);
+    const statusMat = new THREE.MeshStandardMaterial({
+      color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 2.5
+    });
+    const statusLight3D = new THREE.Mesh(statusGeo, statusMat);
+    statusLight3D.position.set(0, this.wallHeight - 0.3, 0.22);
+    doorGroup.add(statusLight3D);
+
+    /* ── Cartel grande y legible ── */
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width  = 512;
+    signCanvas.height = 160;
+    const sctx = signCanvas.getContext('2d');
+
+    // Fondo
+    sctx.fillStyle = '#05050f';
+    sctx.fillRect(0, 0, 512, 160);
+
+    // Borde neón
+    sctx.strokeStyle = hex;
+    sctx.lineWidth   = 5;
+    sctx.strokeRect(5, 5, 502, 150);
+
+    // Línea separadora
+    sctx.strokeStyle = hex;
+    sctx.lineWidth   = 2;
+    sctx.beginPath();
+    sctx.moveTo(10, 90); sctx.lineTo(502, 90);
+    sctx.stroke();
+
+    // Texto principal
+    sctx.fillStyle = hex;
+    sctx.font      = 'bold 36px monospace';
+    sctx.textAlign = 'center';
+    sctx.fillText(doorLabels[val] || val, 256, 68);
+
+    // Estado: BLOQUEADO
+    sctx.fillStyle = '#ff3333';
+    sctx.font      = 'bold 26px monospace';
+    sctx.fillText('● BLOQUEADO — COMPLETA TERMINAL', 256, 130);
+
+    const signTex = new THREE.CanvasTexture(signCanvas);
+    const signMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.8, 1.2),
+      new THREE.MeshBasicMaterial({ map: signTex, transparent: true })
+    );
+    signMesh.position.set(0, 3.5, 0.22);
+    doorGroup.add(signMesh);
+
+    /* ── Flechas en el suelo apuntando a la puerta ── */
+    const arrowCanvas = document.createElement('canvas');
+    arrowCanvas.width  = 128;
+    arrowCanvas.height = 128;
+    const actx = arrowCanvas.getContext('2d');
+    actx.fillStyle = 'transparent';
+    actx.clearRect(0, 0, 128, 128);
+    actx.fillStyle = hex;
+    actx.globalAlpha = 0.7;
+    // Triángulo apuntando al norte
+    actx.beginPath();
+    actx.moveTo(64, 8);
+    actx.lineTo(110, 120);
+    actx.lineTo(18, 120);
+    actx.closePath();
+    actx.fill();
+    const arrowTex = new THREE.CanvasTexture(arrowCanvas);
+
+    // Tres flechas en el suelo delante de la puerta
+    [2.5, 4.5, 6.5].forEach(offset => {
+      const arrow = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.9, 0.9),
+        new THREE.MeshBasicMaterial({ map: arrowTex, transparent: true, depthWrite: false })
+      );
+      arrow.rotation.x = -Math.PI / 2;
+      arrow.position.set(0, 0.02, offset);
+      doorGroup.add(arrow);
+    });
+
+    /* ── Luces ambiente potentes ── */
+    const mainLight = new THREE.PointLight(col, 3.5, 12);
+    mainLight.position.set(0, 3, 0.5);
+    doorGroup.add(mainLight);
+
+    const floorLight = new THREE.PointLight(col, 1.8, 8);
+    floorLight.position.set(0, 0.5, 3);
+    doorGroup.add(floorLight);
+
+    /* ── Posicionar y orientar ── */
     doorGroup.position.set(x, 0, z);
-    const tileLeft = this.getTileAtCoords(x - this.tileSize, z);
+    const tileLeft  = this.getTileAtCoords(x - this.tileSize, z);
     const tileRight = this.getTileAtCoords(x + this.tileSize, z);
     if (!(tileLeft === '1' && tileRight === '1')) doorGroup.rotation.y = Math.PI / 2;
 
@@ -446,7 +630,18 @@ class MapSystem {
     const doorBox = new THREE.Box3().setFromObject(doorGroup);
     this.colliders.push(doorBox);
 
-    const doorObj = { id: val, mesh: doorGroup, left: leftPanel, right: rightPanel, box: doorBox, open: false };
+    // Pulso neón — guardado para animarlo en updateLights
+    this.decorLights.push({ light: mainLight, baseIntensity: 3.5, phase: Math.random() * Math.PI * 2, isDoorLight: true });
+    this.decorLights.push({ light: floorLight, baseIntensity: 1.8, phase: Math.random() * Math.PI * 2, isDoorLight: true });
+
+    const doorObj = {
+      id: val, mesh: doorGroup,
+      left: leftPanel, right: rightPanel,
+      box: doorBox, open: false,
+      statusMesh: statusLight3D, statusMat,
+      signMesh, signTex, signCanvas, sctx,
+      neonMat, col, hex
+    };
     this.doorList.push(doorObj);
     this.doors[val] = doorObj;
   }
@@ -483,6 +678,12 @@ class MapSystem {
     escapeLight.position.set(0, 1.2, 0);
     hatchGroup.add(escapeLight);
     hatchGroup.position.set(x, 0, z);
+    hatchGroup.traverse(child => {
+      if (child.isMesh && child !== portal) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
     scene.add(hatchGroup);
 
     this.escapeHatch = {
@@ -497,14 +698,57 @@ class MapSystem {
     const targets = this.doorList.filter((d) => d.id === doorId && !d.open);
     targets.forEach((door) => {
       door.open = true;
+
+      /* Actualizar cartel a ABIERTO */
+      if (door.sctx && door.signCanvas) {
+        const sctx = door.sctx;
+        const hex  = door.hex;
+        sctx.fillStyle = '#05050f';
+        sctx.fillRect(0, 0, 512, 160);
+        sctx.strokeStyle = hex;
+        sctx.lineWidth   = 5;
+        sctx.strokeRect(5, 5, 502, 150);
+        sctx.strokeStyle = hex;
+        sctx.lineWidth   = 2;
+        sctx.beginPath();
+        sctx.moveTo(10, 90); sctx.lineTo(502, 90);
+        sctx.stroke();
+        sctx.fillStyle = hex;
+        sctx.font      = 'bold 36px monospace';
+        sctx.textAlign = 'center';
+        sctx.fillText({ D1:'NORTE → MEDBAY', D2:'PUENTE DE MANDO', D3:'MÓDULO M-7' }[doorId] || doorId, 256, 68);
+        sctx.fillStyle = '#00ff88';
+        sctx.font      = 'bold 26px monospace';
+        sctx.fillText('✅ ACCESO AUTORIZADO — AVANZA', 256, 130);
+        door.signTex.needsUpdate = true;
+      }
+
+      /* Luz de estado → verde */
+      if (door.statusMesh) {
+        door.statusMesh.material.color.setHex(0x00ff44);
+        door.statusMesh.material.emissive.setHex(0x00ff44);
+      }
+
+      /* Neón → blanco brillante durante apertura */
+      if (door.neonMat) {
+        door.neonMat.emissive.setHex(0xffffff);
+        door.neonMat.emissiveIntensity = 6;
+        setTimeout(() => {
+          door.neonMat.emissive.setHex(door.col);
+          door.neonMat.emissiveIntensity = 3.5;
+        }, 600);
+      }
+
+      /* Animación de deslizamiento (80 frames, más suave) */
       let t = 0;
       const anim = () => {
         t++;
-        const offset = (t / 60) * 1.6;
-        door.left.position.x = -0.95 - offset;
-        door.right.position.x = 0.95 + offset;
-        if (t < 60) requestAnimationFrame(anim);
-        else this.removeCollider(door.box);
+        const ease = 1 - Math.pow(1 - t / 80, 3); // ease-out cúbico
+        const offset = ease * 2.1;
+        door.left.position.x  = -0.95 - offset;
+        door.right.position.x =  0.95 + offset;
+        if (t < 80) requestAnimationFrame(anim);
+        else        this.removeCollider(door.box);
       };
       anim();
     });
@@ -513,7 +757,29 @@ class MapSystem {
 
   updateLights(time) {
     this.decorLights.forEach((e) => {
-      e.light.intensity = e.baseIntensity * (0.85 + Math.sin(time * 3 + e.phase) * 0.1);
+      if (e.isDoorLight) {
+        // Pulso intenso para las luces de puertas — fácil de ver desde lejos
+        e.light.intensity = e.baseIntensity * (0.75 + Math.sin(time * 4 + e.phase) * 0.4);
+        return;
+      }
+      if (e.zoneKey === 'lab' || e.zoneKey === 'medbay') {
+        // Alerta parpadeante roja/naranja rápida y tensa para zonas críticas
+        const pulse = Math.sin(time * 8 + e.phase);
+        e.light.intensity = e.baseIntensity * (0.6 + (pulse > 0 ? 0.75 : -0.55));
+        
+        // Efecto estroboscópico de interferencia eléctrica
+        if (Math.random() < 0.015) {
+          e.light.intensity = 0.05;
+        }
+      } else {
+        // Oscilación ambiental suave en zonas seguras
+        e.light.intensity = e.baseIntensity * (0.85 + Math.sin(time * 3 + e.phase) * 0.1);
+        
+        // Tubos fluorescentes que parpadean erráticamente
+        if (Math.random() < 0.0025) {
+          e.light.intensity = 0.05;
+        }
+      }
     });
     if (this.escapeHatch?.portal) this.escapeHatch.portal.rotation.y = time * 0.5;
   }

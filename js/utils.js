@@ -376,5 +376,252 @@ window.UTILS = {
     ctx.globalAlpha = 1;
 
     return new THREE.CanvasTexture(canvas);
+  },
+
+  // Genera un mapa de relieve (Bump Map) para las paredes
+  createMetalWallBumpTexture: () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Base plana gris medio
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Ranuras de paneles (indenciones profundas, color oscuro)
+    ctx.strokeStyle = '#202020';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(4, 4, 248, 248);
+    ctx.strokeRect(4, 4, 120, 248);
+    ctx.strokeRect(4, 128, 248, 4);
+
+    // Remaches extruidos (color claro para indicar altura)
+    ctx.fillStyle = '#e0e0e0';
+    const rivets = [
+      [12, 12], [116, 12], [140, 12], [244, 12],
+      [12, 120], [116, 120], [140, 120], [244, 120],
+      [12, 136], [116, 136], [140, 136], [244, 136],
+      [12, 244], [116, 244], [140, 244], [244, 244]
+    ];
+    rivets.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Pequeños arañazos / imperfecciones
+    for (let i = 0; i < 20; i++) {
+      ctx.strokeStyle = Math.random() > 0.5 ? '#ffffff' : '#202020';
+      ctx.globalAlpha = 0.15;
+      ctx.lineWidth = 1;
+      const x = Math.random() * 240 + 8;
+      const y = Math.random() * 240 + 8;
+      const len = Math.random() * 15 + 5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + len, y + len * 0.3);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  },
+
+  // Genera mapa de rugosidad para paredes (brillo dinámico)
+  createMetalWallRoughnessTexture: () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Base semirugosa
+    ctx.fillStyle = '#909090';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Juntas (más rugosas / menos brillantes, color claro)
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(4, 4, 248, 248);
+    ctx.strokeRect(4, 4, 120, 248);
+    ctx.strokeRect(4, 128, 248, 4);
+
+    // Remaches (metal pulido / muy brillante, color muy oscuro/negro)
+    ctx.fillStyle = '#101010';
+    const rivets = [
+      [12, 12], [116, 12], [140, 12], [244, 12],
+      [12, 120], [116, 120], [140, 120], [244, 120],
+      [12, 136], [116, 136], [140, 136], [244, 136],
+      [12, 244], [116, 244], [140, 244], [244, 244]
+    ];
+    rivets.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  },
+
+  // Bump Map para suelo
+  createFloorBumpTexture: () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Base de metal elevada
+    ctx.fillStyle = '#b0b0b0';
+    ctx.fillRect(0, 0, 128, 128);
+
+    // Ranuras profundas (rejilla)
+    ctx.fillStyle = '#101010';
+    const size = 8;
+    const gap = 4;
+    for (let x = 4; x < 128; x += size + gap) {
+      for (let y = 4; y < 128; y += size + gap) {
+        ctx.fillRect(x, y, size, size);
+      }
+    }
+
+    // Borde de la placa indentado
+    ctx.strokeStyle = '#303030';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, 126, 126);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  },
+
+  // Roughness Map para suelo
+  createFloorRoughnessTexture: () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Superficie brillante del metal
+    ctx.fillStyle = '#404040';
+    ctx.fillRect(0, 0, 128, 128);
+
+    // Ranuras acumulan suciedad/óxido (muy rugosas)
+    ctx.fillStyle = '#d0d0d0';
+    const size = 8;
+    const gap = 4;
+    for (let x = 4; x < 128; x += size + gap) {
+      for (let y = 4; y < 128; y += size + gap) {
+        ctx.fillRect(x, y, size, size);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  },
+
+  // Bump Map para techo
+  createCeilingBumpTexture: () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#a0a0a0';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Conductos centrales (depresión media)
+    ctx.fillStyle = '#606060';
+    ctx.fillRect(64, 0, 128, 256);
+
+    // Rejilla de conducto (profundo)
+    ctx.fillStyle = '#101010';
+    for (let y = 8; y < 256; y += 16) {
+      ctx.fillRect(72, y, 112, 6);
+    }
+
+    // Marcos
+    ctx.strokeStyle = '#404040';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(4, 4, 248, 248);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  },
+
+  // Textura Emisiva de Pared (Circuitos del deck o venas de infección)
+  createWallEmissiveTexture: (zoneKey = '', colorHex = '#00d4ff') => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo negro (sin emisión)
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Si la zona es infectada (lab o eng), dibujamos micelio biológico
+    if (zoneKey === 'lab' || zoneKey === 'eng') {
+      ctx.strokeStyle = '#10ff40'; // Bio-green
+      ctx.lineWidth = 2.0;
+      ctx.shadowColor = '#00ff30';
+      ctx.shadowBlur = 8;
+
+      // Venas orgánicas aleatorias
+      ctx.beginPath();
+      ctx.moveTo(128, 0);
+      ctx.bezierCurveTo(100, 80, 160, 160, 128, 256);
+      ctx.moveTo(0, 128);
+      ctx.bezierCurveTo(80, 100, 160, 160, 256, 128);
+      ctx.stroke();
+
+      // Nódulos o bulbos de esporas
+      ctx.fillStyle = '#30ff50';
+      const nodes = [[128, 90], [145, 140], [60, 110], [180, 150]];
+      nodes.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    } else {
+      // Zonas normales: Circuitos futuristas / Neón
+      ctx.strokeStyle = colorHex;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = colorHex;
+      ctx.shadowBlur = 6;
+
+      // Líneas de neón tecnológicas horizontales y verticales rectangulares
+      ctx.strokeRect(30, 30, 60, 60);
+      ctx.strokeRect(166, 166, 60, 60);
+
+      ctx.beginPath();
+      ctx.moveTo(90, 60);
+      ctx.lineTo(166, 60);
+      ctx.lineTo(166, 166);
+      ctx.moveTo(30, 60);
+      ctx.lineTo(10, 60);
+      ctx.moveTo(226, 196);
+      ctx.lineTo(246, 196);
+      ctx.stroke();
+
+      // Indicadores luminosos parpadeantes simulados
+      ctx.fillStyle = colorHex;
+      ctx.beginPath();
+      ctx.arc(128, 60, 3, 0, Math.PI * 2);
+      ctx.arc(128, 196, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Resetear sombra
+    ctx.shadowBlur = 0;
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
   }
 };

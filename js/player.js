@@ -29,6 +29,12 @@ class PlayerController {
     this.nearTerminal = null;
     this.nearEscape = false;
     this.nearAudioLog = null;
+
+    // Propiedades de la linterna táctica
+    this.flashlight = null;
+    this.flashlightOn = false;
+    this.flashlightFlickerTimer = 0;
+    this.flashlightTarget = null;
   }
 
   // Inicializa cámara, posición y controles
@@ -43,6 +49,30 @@ class PlayerController {
     this.health = 100;
     this.infection = 0;
     this.alive = true;
+
+    // Inicializar Linterna SpotLight con sombras de alta calidad
+    if (this.flashlight) {
+      this.camera.remove(this.flashlight);
+      if (this.flashlightTarget) this.camera.remove(this.flashlightTarget);
+    }
+
+    this.flashlight = new THREE.SpotLight(0xffffff, 4.0, 32, Math.PI / 4.8, 0.45, 1.25);
+    this.flashlight.castShadow = true;
+    this.flashlight.shadow.mapSize.width = 1024;
+    this.flashlight.shadow.mapSize.height = 1024;
+    this.flashlight.shadow.camera.near = 0.1;
+    this.flashlight.shadow.camera.far = 35;
+    this.flashlight.shadow.bias = -0.0015;
+
+    // Target de linterna frente a la cámara
+    this.flashlightTarget = new THREE.Object3D();
+    this.flashlightTarget.position.set(0, 0, -1);
+    this.camera.add(this.flashlightTarget);
+    this.flashlight.target = this.flashlightTarget;
+
+    this.camera.add(this.flashlight);
+    this.flashlightOn = true;
+    this.flashlightFlickerTimer = 0;
 
     this.setupInput();
   }
@@ -67,6 +97,11 @@ class PlayerController {
       // Manual / Codex
       if (key === 'm') {
         window.GAME.toggleManual();
+      }
+
+      // Alternar linterna
+      if (key === 'f') {
+        this.toggleFlashlight();
       }
     });
 
@@ -145,6 +180,11 @@ class PlayerController {
       HUD.triggerRedFlash();
     }
 
+    // Parpadeo inmersivo de linterna al recibir daño
+    if (this.flashlight && this.flashlightOn) {
+      this.flashlightFlickerTimer = 35; // 35 frames de parpadeos
+    }
+
     if (this.health <= 0) {
       this.die(cause);
     }
@@ -178,6 +218,19 @@ class PlayerController {
   // Actualización por cuadro (frame)
   update() {
     if (!this.alive || window.GAME.isTerminalOpen || window.GAME.isManualOpen || window.GAME.isLoreLogOpen) return;
+
+    // Manejo de parpadeo de linterna cuando recibe daño
+    if (this.flashlight && this.flashlightOn) {
+      if (this.flashlightFlickerTimer > 0) {
+        this.flashlightFlickerTimer--;
+        this.flashlight.visible = Math.random() > 0.35; // 35% de probabilidad de apagarse por frame
+        if (this.flashlightFlickerTimer === 0) {
+          this.flashlight.visible = true; // restaurar
+        }
+      } else {
+        this.flashlight.visible = true;
+      }
+    }
 
     // Calcular vector de movimiento
     const moveVector = new THREE.Vector3();
@@ -280,6 +333,16 @@ class PlayerController {
       }
     } else {
       HUD.hideInteractionPrompt();
+    }
+  }
+
+  // Alterna el estado de la linterna táctica
+  toggleFlashlight() {
+    if (!this.flashlight) return;
+    this.flashlightOn = !this.flashlightOn;
+    this.flashlight.visible = this.flashlightOn;
+    if (window.AUDIO) {
+      window.AUDIO.playFlashlightToggle();
     }
   }
 }

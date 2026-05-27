@@ -804,6 +804,29 @@ class AudioSystem {
     }
     return this.isMuted;
   }
+
+  // Sonido de clic mecánico para encendido/apagado de linterna
+  playFlashlightToggle() {
+    if (!this.ctx) this.init();
+    if (this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1000, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(gain);
+    gain.connect(this.masterVolume);
+
+    osc.start(now);
+    osc.stop(now + 0.04);
+  }
 }
 
 window.AUDIO = new AudioSystem();
