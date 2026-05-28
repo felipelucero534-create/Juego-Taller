@@ -248,8 +248,8 @@ class MapSystem {
   }
 
   setupLighting(scene) {
-    scene.add(new THREE.AmbientLight(0x0a0a20, 0.15)); // Antes 0.85 — muy oscuro ahora
-    scene.add(new THREE.HemisphereLight(0x112244, 0x050508, 0.12)); // Antes 0.35 — apenas visible
+    scene.add(new THREE.AmbientLight(0x0a0a20, 0.04)); // Antes 0.85 — muy oscuro ahora
+    scene.add(new THREE.HemisphereLight(0x112244, 0x050508, 0.02)); // Antes 0.35 — apenas visible
 
     const lights = [
       { color: 0x44ff88, x: 5, z: 16, i: 1.2, d: 32 },
@@ -434,22 +434,80 @@ class MapSystem {
     const accent = zoneKey ? this.zones[zoneKey].color : 0x00d4ff;
     const termGroup = new THREE.Group();
 
-    const base = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.8), new THREE.MeshStandardMaterial({ color: 0x141428, metalness: 0.9 }));
-    base.position.y = 0.12;
-    termGroup.add(base);
+    // Materiales
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x141428, metalness: 0.9, roughness: 0.4 });
+    const darkMetal = new THREE.MeshStandardMaterial({ color: 0x0a0a15, metalness: 0.8, roughness: 0.6 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0x050a10, emissive: accent, emissiveIntensity: 0.2 });
 
-    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 1.0, 8), new THREE.MeshStandardMaterial({ color: 0x1e1e35, metalness: 0.8 }));
-    stand.position.y = 0.75;
+    // 1. Base escalonada pesada
+    const baseBottom = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.15, 1.0), metalMat);
+    baseBottom.position.y = 0.075;
+    termGroup.add(baseBottom);
+    
+    const baseTop = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.7), darkMetal);
+    baseTop.position.y = 0.25;
+    termGroup.add(baseTop);
+
+    // 2. Columna central robusta
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 1.0, 8), metalMat);
+    stand.position.y = 0.8;
     termGroup.add(stand);
 
+    // 3. Cables enroscados a la columna
+    const cableGeo = new THREE.TorusGeometry(0.22, 0.03, 8, 16);
+    const cableMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+    for(let i=0; i<4; i++) {
+      const cable = new THREE.Mesh(cableGeo, cableMat);
+      cable.position.y = 0.4 + (i * 0.2);
+      cable.rotation.x = Math.PI / 2;
+      cable.rotation.y = (i * 0.5);
+      termGroup.add(cable);
+    }
+
+    // 4. Carcasa de la pantalla (Monitor blindado)
+    const monitorGroup = new THREE.Group();
+    monitorGroup.position.set(0, 1.45, 0.1);
+    monitorGroup.rotation.x = -Math.PI / 8; // Inclinado hacia arriba
+    
+    const housing = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.2), metalMat);
+    monitorGroup.add(housing);
+
     const screen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.82, 0.48),
+      new THREE.PlaneGeometry(0.95, 0.55),
       new THREE.MeshStandardMaterial({ color: 0x050a10, emissive: accent, emissiveIntensity: 0.55 })
     );
-    screen.position.set(0, 1.35, 0.15);
-    screen.rotation.x = -Math.PI / 7;
-    termGroup.add(screen);
+    screen.position.set(0, 0, 0.101);
+    monitorGroup.add(screen);
 
+    // Paneles laterales de la carcasa
+    const sidePanelGeo = new THREE.BoxGeometry(0.05, 0.7, 0.3);
+    const leftPanel = new THREE.Mesh(sidePanelGeo, darkMetal);
+    leftPanel.position.set(-0.55, 0, 0.05);
+    monitorGroup.add(leftPanel);
+    const rightPanel = new THREE.Mesh(sidePanelGeo, darkMetal);
+    rightPanel.position.set(0.55, 0, 0.05);
+    monitorGroup.add(rightPanel);
+
+    termGroup.add(monitorGroup);
+
+    // 5. Teclado inclinado hacia el jugador
+    const keyboardGroup = new THREE.Group();
+    keyboardGroup.position.set(0, 1.15, 0.35);
+    keyboardGroup.rotation.x = -Math.PI / 3;
+
+    const kbBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.05), darkMetal);
+    keyboardGroup.add(kbBase);
+    
+    const keys = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.7, 0.2),
+      accentMat
+    );
+    keys.position.z = 0.026;
+    keyboardGroup.add(keys);
+
+    termGroup.add(keyboardGroup);
+
+    // 6. Letrero identificador
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 64;
@@ -465,12 +523,14 @@ class MapSystem {
     ctx.fillText(lore.role || '', 128, 48);
     const idTex = new THREE.CanvasTexture(canvas);
     const label = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.24), new THREE.MeshBasicMaterial({ map: idTex, transparent: true }));
-    label.position.set(0, 1.72, 0.18);
-    label.rotation.x = -Math.PI / 7;
-    termGroup.add(label);
+    
+    label.position.set(0, 0.48, 0.11);
+    monitorGroup.add(label);
 
     termGroup.add(new THREE.PointLight(accent, 2.5, 7).translateY(1.5));
     termGroup.position.set(x, 0, z);
+    
+    // Sombras
     termGroup.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;

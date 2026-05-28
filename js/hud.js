@@ -18,6 +18,7 @@ class HUDSystem {
     this.loreToast = null;
     this.loreToastTimer = null;
     this.fearOverlay = null;
+    this.inventoryEl = null;
     this.lastFrameTime = performance.now();
     this.timerInterval = null;
   }
@@ -44,6 +45,21 @@ class HUDSystem {
     // Barra de stamina (sprint)
     this.staminaBar = document.getElementById('hud-stamina-bar');
     this.staminaFill = document.getElementById('hud-stamina-fill');
+    // Create inventory UI element
+    this.inventoryEl = document.createElement('div');
+    this.inventoryEl.id = 'hud-inventory';
+    this.inventoryEl.style.position = 'absolute';
+    this.inventoryEl.style.bottom = '8px';
+    this.inventoryEl.style.right = '8px';
+    this.inventoryEl.style.padding = '4px 8px';
+    this.inventoryEl.style.background = 'rgba(0,0,0,0.5)';
+    this.inventoryEl.style.borderRadius = '4px';
+    this.inventoryEl.style.fontFamily = 'var(--font-mono)';
+    this.inventoryEl.style.color = 'var(--clr-success)';
+    this.inventoryEl.style.fontSize = '0.8rem';
+    this.inventoryEl.textContent = 'Piezas: 0';
+    document.body.appendChild(this.inventoryEl);
+    // duplicate inventory UI removed
   }
 
   // Actualiza la salud del jugador en el HUD

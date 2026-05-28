@@ -349,52 +349,6 @@
   animation: highlight-pulse 1.5s ease-in-out infinite;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* RESPONSIVIDAD Y ACCESIBILIDAD */
-/* ─────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .terminal-window {
-    max-width: 95%;
-    height: 85vh;
-  }
-
-  .terminal-info-panel {
-    width: 50%;
-  }
-
-  .terminal-editor-panel {
-    width: 50%;
-  }
-}
-
-@media (max-width: 768px) {
-  .terminal-window {
-    height: 90vh;
-    flex-direction: column;
-  }
-
-  .terminal-body {
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .terminal-info-panel {
-    width: 100%;
-    height: 40%;
-    border-right: none;
-    border-bottom: 1px solid var(--clr-border);
-  }
-
-  .terminal-editor-panel {
-    width: 100%;
-    height: 60%;
-  }
-
-  .editor-textarea {
-    font-size: 0.8rem;
-  }
-}
-
 /* Mejora de scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -414,3 +368,4 @@
   background: rgba(0, 212, 255, 0.7);
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
 }
+

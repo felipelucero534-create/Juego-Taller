@@ -221,3 +221,27 @@
   50%  { transform: scale(1.15) rotate(180deg); opacity: 1; }
   100% { transform: scale(1) rotate(360deg); opacity: 0.8; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* RESPONSIVE DESIGN - screens.css                                             */
+/* ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .error-screen-title {
+    font-size: 1.2rem;
+  }
+  .error-screen-log {
+    font-size: 0.75rem;
+    padding: 10px;
+  }
+  .death-logo {
+    font-size: 3.5rem;
+  }
+  .death-title {
+    font-size: 1.8rem;
+    letter-spacing: 4px;
+  }
+  .death-description {
+    font-size: 0.75rem;
+  }
+}
+

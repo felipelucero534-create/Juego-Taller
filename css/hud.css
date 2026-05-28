@@ -300,3 +300,60 @@
   display: block;
   animation: glitchFlicker 2s infinite;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* RESPONSIVE DESIGN - hud.css                                                 */
+/* ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #hud-container {
+    padding: 10px;
+  }
+  
+  .hud-top, .hud-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .hud-panel {
+    min-width: 0;
+    width: 100%;
+    padding: 8px 12px;
+  }
+
+  .hud-status-panel {
+    order: 2;
+  }
+
+  .hud-diagnostics-panel {
+    order: 1;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .hud-diagnostics-panel::before {
+    left: 0;
+    right: auto;
+  }
+
+  .hud-radar-panel {
+    display: none; /* Hide radar on mobile to save space if needed, or scale it */
+  }
+
+  .hud-vital-panel {
+    width: 100%;
+    order: 1;
+  }
+
+  .hud-controls-panel {
+    order: 2;
+    font-size: 0.65rem;
+  }
+
+  .hud-location {
+    font-size: 0.8rem;
+  }
+}
+

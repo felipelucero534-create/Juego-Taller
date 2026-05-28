@@ -343,3 +343,49 @@
   color: var(--clr-deep);
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* RESPONSIVE DESIGN - terminal.css                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .terminal-window {
+    width: 95%;
+    height: 85vh;
+  }
+  .terminal-info-panel { width: 50%; }
+  .terminal-editor-panel { width: 50%; }
+}
+
+@media (max-width: 768px) {
+  .terminal-window {
+    height: 90vh;
+  }
+  .terminal-body {
+    flex-direction: column;
+  }
+  .terminal-info-panel {
+    width: 100%;
+    height: 40%;
+    border-right: none;
+    border-bottom: 1px solid var(--clr-border);
+  }
+  .terminal-editor-panel {
+    width: 100%;
+    height: 60%;
+  }
+  .terminal-footer {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 20px;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .terminal-status-log {
+    max-width: 100%;
+    text-align: center;
+  }
+  .terminal-actions {
+    justify-content: center;
+  }
+}
+

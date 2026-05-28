@@ -26,7 +26,7 @@ class GameManager {
     // 1. Configurar escena y renderizador 3D
     const canvas = document.getElementById('game-canvas');
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x010103, 0.16); // Niebla mucho más oscura y densa
+    this.scene.fog = new THREE.FogExp2(0x000000, 0.28); // Niebla mucho más oscura y densa
 
     // Cámara con FOV cinematográfico
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);

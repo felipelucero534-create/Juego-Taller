@@ -7,6 +7,9 @@ class PlayerController {
   constructor() {
     this.camera = null;
 
+    // ── Inventario interno ─────────────────────────────────────────────
+    this.hardwarePieces = 0; // contador de piezas recolectadas
+
     // ── Velocidades de movimiento ──────────────────────────────────────────
     this.walkSpeed    = 0.08;   // velocidad base al caminar
     this.sprintSpeed  = 0.155;  // velocidad al correr (Shift)
@@ -98,12 +101,12 @@ class PlayerController {
       if (this.flashlightTarget) this.camera.remove(this.flashlightTarget);
     }
 
-    this.flashlight = new THREE.SpotLight(0xffffff, 4.0, 32, Math.PI / 4.8, 0.45, 1.25);
+    this.flashlight = new THREE.SpotLight(0xffffee, 12.0, 50, Math.PI / 5, 0.3, 1.0);
     this.flashlight.castShadow = true;
     this.flashlight.shadow.mapSize.width = 1024;
     this.flashlight.shadow.mapSize.height = 1024;
     this.flashlight.shadow.camera.near = 0.1;
-    this.flashlight.shadow.camera.far = 35;
+    this.flashlight.shadow.camera.far = 50;
     this.flashlight.shadow.bias = -0.0015;
 
     // Target de linterna frente a la cámara (elevado ligeramente para iluminar más alto)
@@ -472,6 +475,14 @@ class PlayerController {
     this.flashlight.visible = this.flashlightOn;
     if (window.AUDIO) {
       window.AUDIO.playFlashlightToggle();
+    }
+  }
+
+  // Añade una pieza de hardware al inventario y actualiza HUD
+  addHardwarePiece() {
+    this.hardwarePieces += 1;
+    if (window.HUD && typeof window.HUD.updateInventory === 'function') {
+      window.HUD.updateInventory(this.hardwarePieces);
     }
   }
 }
