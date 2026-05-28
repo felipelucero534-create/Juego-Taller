@@ -33,6 +33,8 @@ class LevelSystem {
       if (chapterNum === 1) {
         AUDIO.init();
         AMBIENT.start();
+        // Iniciar golpes salvajes continuos hasta completar Terminal Alpha (T1)
+        AUDIO.startPreTerminalBanging();
       }
       HUD.startTimer();
       this.spawnEnemiesForChapter(chapterNum);
@@ -114,6 +116,8 @@ class LevelSystem {
     const t3 = MAP.terminals.find((t) => t.id === 'T3')?.solved;
 
     if (this.currentChapter === 1 && t1) {
+      // Detener los golpes salvajes: la criatura se retira al completar T1
+      AUDIO.stopPreTerminalBanging();
       this.advanceChapter(2, 'chapter1_complete');
     } else if (this.currentChapter === 2 && t2) {
       this.advanceChapter(3, 'chapter2_complete');

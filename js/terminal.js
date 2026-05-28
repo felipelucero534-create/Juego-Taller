@@ -21,6 +21,7 @@ class TerminalSystem {
     this.activeTerminal = null; // Objeto terminal del mapa (T1, T2 o T3)
     this.activeChallenge = null; // Objeto de desafío activo (challenges.js)
     this.currentCode = '';
+    this.bangingInterval = null; // Intervalo para sonidos de golpes de tensión
   }
 
   // Enlazar los elementos DOM de la ventana de la terminal
@@ -88,7 +89,7 @@ class TerminalSystem {
       const p = document.createElement('div');
       p.className = 'terminal-story-line';
       if (line.startsWith('ARIA-7')) {
-        p.innerHTML = `<span class="terminal-story-author">ARIA-7 // TRANS-LOG:</span><br>${line.replace('ARIA-7 — Registro de voz 001:', '').replace('ARIA-7 — Registro de voz 002:', '').replace('ARIA-7 — Registro de voz 003:', '').replace('ARIA-7 — Registro de voz 004:', '').replace('ARIA-7 — Registro de voz 005:', '').replace('ARIA-7 — Registro de voz 006:', '')}`;
+        p.innerHTML = `<span class="terminal-story-author">ARIA-7 // TRANS-LOG:</span><br>${line.replace(/ARIA-7 — Registro de voz \d+:/, '').trim()}`;
       } else {
         p.textContent = line;
       }
@@ -98,6 +99,22 @@ class TerminalSystem {
     // Cargar plantilla de código inicial
     this.editorTextarea.value = this.activeChallenge.template;
     this.updateLineNumbers();
+
+    // Efecto de terror: golpes en la puerta en la primera terminal
+    if (this.activeTerminal.id === 'T1' && !this.activeTerminal.solved) {
+      // Un golpe inicial rápido al entrar a la terminal (solo sonido)
+      setTimeout(() => {
+        if (this.activeTerminal && this.activeTerminal.id === 'T1' && window.GAME.isTerminalOpen && !this.activeTerminal.solved) {
+          AUDIO.playDoorBanging();
+        }
+      }, 1200);
+
+      this.bangingInterval = setInterval(() => {
+        if (this.activeTerminal && this.activeTerminal.id === 'T1' && window.GAME.isTerminalOpen && !this.activeTerminal.solved) {
+          AUDIO.playDoorBanging();
+        }
+      }, 8000);
+    }
 
     // Limpiar logs de estado
     this.statusLog.textContent = 'INICIALIZANDO LECTOR DE PROTOCOLOS...';
@@ -169,6 +186,11 @@ class TerminalSystem {
     AUDIO.playClick();
     this.windowEl.classList.remove('active');
     window.GAME.isTerminalOpen = false;
+
+    if (this.bangingInterval) {
+      clearInterval(this.bangingInterval);
+      this.bangingInterval = null;
+    }
 
     // Bloquear puntero de nuevo automáticamente al volver
     const canvas = document.getElementById('game-canvas');
@@ -255,26 +277,55 @@ class TerminalSystem {
       const allDone = sequence.every(chId => window.GAME.completedChallenges.includes(chId));
 
       if (allDone) {
+        // Marcar terminal como resuelta y encender luz verde
         this.activeTerminal.solved = true;
-        // Cambiar luz de la terminal a verde
         const screenMesh = this.activeTerminal.screenMesh || this.activeTerminal.mesh.children[3];
         if (screenMesh) screenMesh.material.emissive.setHex(0x00ff88);
 
+        // Limpiar el intervalo de golpes de inmediato
+        if (this.bangingInterval) {
+          clearInterval(this.bangingInterval);
+          this.bangingInterval = null;
+        }
+
         // Desbloquear puerta asociada (D1 para T1, D2 para T2, etc.)
         const doorId = this.activeTerminal.id.replace('T', 'D');
-        MAP.openDoor(doorId);
+        console.log('✔️  Todos los desafíos completados – abrir puerta', doorId);
+        if (typeof MAP !== 'undefined' && typeof MAP.openDoor === 'function') {
+          MAP.openDoor(doorId);
+        } else {
+          console.warn('MAP.openDoor no está disponible, reintentando en 200ms');
+          setTimeout(() => {
+            if (typeof MAP !== 'undefined' && typeof MAP.openDoor === 'function') {
+              MAP.openDoor(doorId);
+            } else {
+              console.error('Falló abrir la puerta después del reintento');
+            }
+          }, 200);
+        }
+
+        // Si fue la primera terminal, provocar que los zombis se asusten y huyan
+        if (this.activeTerminal.id === 'T1') {
+          AUDIO.playZombieRetreat();
+          HUD.showLoreToast('El soplido del ventilador reactivado asusta a los Caminantes. Se alejan por la ventilación.');
+        }
 
         // Si fue la última terminal, autorizar escape final
         if (this.activeTerminal.id === 'T3') {
           window.GAME.escapeAuthorized = true;
         }
-      }
 
-      // Cerrar la terminal automáticamente tras 2 segundos de éxito
-      setTimeout(() => {
-        this.close();
-        window.GAME.checkLevelProgress();
-      }, 2000);
+        // Cerrar la terminal automáticamente tras 2 segundos de éxito TOTAL
+        setTimeout(() => {
+          this.close();
+          window.GAME.checkLevelProgress();
+        }, 2000);
+      } else {
+        // Aún faltan pasos para esta terminal, cargar el siguiente desafío
+        setTimeout(() => {
+          this.open(this.activeTerminal);
+        }, 2000);
+      }
     } else {
       // FALLO: pantalla roja de error y daño leve por infección fúngica por cortocircuito
       AUDIO.playAccessDenied();

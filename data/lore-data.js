@@ -277,7 +277,7 @@ window.LORE_DATA = {
         {
           title: 'MÓDULO M-7 — DESPEGUE',
           subtitle: 'Velocidad: 0.03c | Rumbo: Sector Delta-9',
-          text: 'Lo logré. La escotilla se cerró. Detrás quedan la Erebus, MYCO-X y NXVL-0.\n\nSeis protocolos compilados. HTML, CSS, JavaScript — línea por línea, como Chen y Voss nunca imaginaron.',
+          text: 'Lo logré. La escotilla se cerró. Detrás quedan la Erebus, MYCO-X y NXVL-0.\n\nDoce protocolos compilados. HTML, CSS, JavaScript — línea por línea, como Chen y Voss nunca imaginaron.',
           image: 'aria_escape'
         },
         {

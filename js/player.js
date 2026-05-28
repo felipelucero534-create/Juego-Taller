@@ -6,25 +6,58 @@
 class PlayerController {
   constructor() {
     this.camera = null;
-    this.moveSpeed = 0.08;
+
+    // ── Velocidades de movimiento ──────────────────────────────────────────
+    this.walkSpeed    = 0.08;   // velocidad base al caminar
+    this.sprintSpeed  = 0.155;  // velocidad al correr (Shift)
+    this.crouchSpeed  = 0.042;  // velocidad al agacharse (Ctrl)
+    this.moveSpeed    = this.walkSpeed;
+
     this.mouseSensitivity = 0.0022;
 
     this.position = new THREE.Vector3();
     this.rotation = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ para FPS look
 
-    // Estado del Jugador
+    // ── Inercia / aceleración suave ────────────────────────────────────────
+    this.velocity      = new THREE.Vector3(); // velocidad actual con inercia
+    this.acceleration  = 0.18;  // qué tan rápido llega a la velocidad máxima
+    this.friction      = 0.82;  // qué tan rápido frena (1 = sin fricción)
+
+    // ── Estado del Jugador ─────────────────────────────────────────────────
     this.health = 100;
     this.infection = 0;
     this.alive = true;
 
+    // ── Stamina (sprint) ───────────────────────────────────────────────────
+    this.stamina         = 100;   // 0-100
+    this.staminaDrain    = 0.55;  // por frame al correr
+    this.staminaRegen    = 0.22;  // por frame al descansar
+    this.sprintExhausted = false; // bloqueado hasta recuperar stamina mínima
+
+    // ── Estado de movimiento especial ─────────────────────────────────────
+    this.isSprinting = false;
+    this.isCrouching = false;
+
+    // ── Altura de la cámara ────────────────────────────────────────────────
+    this.standHeight  = 1.7;
+    this.crouchHeight = 0.9;
+    this.currentHeight = this.standHeight;  // altura interpolada actual
+
     // Controles de teclado
-    this.keys = { w: false, a: false, s: false, d: false };
+    this.keys = { w: false, a: false, s: false, d: false, shift: false, ctrl: false };
 
     // PointerLock state
     this.isLocked = false;
     this.bobTime = 0;
-    this.footstepCounter = 0; // Contador para efectos de pasos
-    this.lastDamageTime = 0; // Para evitar múltiples sonidos de daño
+    this.bobAmount = 0;           // amplitude interpolada del balanceo
+    this.footstepCounter = 0;
+    this.lastDamageTime = 0;
+
+    // ── FOV dinámico ───────────────────────────────────────────────────────
+    this.baseFOV    = 70;
+    this.sprintFOV  = 82;
+    this.crouchFOV  = 63;
+    this.currentFOV = this.baseFOV;
 
     this.nearTerminal = null;
     this.nearEscape = false;
@@ -49,6 +82,15 @@ class PlayerController {
     this.health = 100;
     this.infection = 0;
     this.alive = true;
+    this.stamina = 100;
+    this.sprintExhausted = false;
+    this.isSprinting = false;
+    this.isCrouching = false;
+    this.velocity.set(0, 0, 0);
+    this.currentHeight = this.standHeight;
+    this.currentFOV = this.baseFOV;
+    this.bobTime = 0;
+    this.bobAmount = 0;
 
     // Inicializar Linterna SpotLight con sombras de alta calidad
     if (this.flashlight) {
@@ -64,9 +106,9 @@ class PlayerController {
     this.flashlight.shadow.camera.far = 35;
     this.flashlight.shadow.bias = -0.0015;
 
-    // Target de linterna frente a la cámara
+    // Target de linterna frente a la cámara (elevado ligeramente para iluminar más alto)
     this.flashlightTarget = new THREE.Object3D();
-    this.flashlightTarget.position.set(0, 0, -1);
+    this.flashlightTarget.position.set(0, 0.15, -1);
     this.camera.add(this.flashlightTarget);
     this.flashlight.target = this.flashlightTarget;
 
@@ -84,10 +126,15 @@ class PlayerController {
       if (!this.alive || window.GAME.isTerminalOpen || window.GAME.isManualOpen || window.GAME.isLoreLogOpen) return;
 
       const key = e.key.toLowerCase();
-      if (key === 'w' || key === 'arrowup') this.keys.w = true;
-      if (key === 's' || key === 'arrowdown') this.keys.s = true;
-      if (key === 'a' || key === 'arrowleft') this.keys.a = true;
+      if (key === 'w' || key === 'arrowup')    this.keys.w = true;
+      if (key === 's' || key === 'arrowdown')  this.keys.s = true;
+      if (key === 'a' || key === 'arrowleft')  this.keys.a = true;
       if (key === 'd' || key === 'arrowright') this.keys.d = true;
+
+      // Sprint (Shift)
+      if (e.key === 'Shift')   this.keys.shift = true;
+      // Agacharse (Ctrl)
+      if (e.key === 'Control') this.keys.ctrl  = true;
 
       // Interacción
       if (key === 'e') {
@@ -108,10 +155,13 @@ class PlayerController {
     // Teclado arriba
     document.addEventListener('keyup', (e) => {
       const key = e.key.toLowerCase();
-      if (key === 'w' || key === 'arrowup') this.keys.w = false;
-      if (key === 's' || key === 'arrowdown') this.keys.s = false;
-      if (key === 'a' || key === 'arrowleft') this.keys.a = false;
+      if (key === 'w' || key === 'arrowup')    this.keys.w = false;
+      if (key === 's' || key === 'arrowdown')  this.keys.s = false;
+      if (key === 'a' || key === 'arrowleft')  this.keys.a = false;
       if (key === 'd' || key === 'arrowright') this.keys.d = false;
+
+      if (e.key === 'Shift')   this.keys.shift = false;
+      if (e.key === 'Control') this.keys.ctrl  = false;
     });
 
     // Ratón - Look
@@ -219,72 +269,151 @@ class PlayerController {
   update() {
     if (!this.alive || window.GAME.isTerminalOpen || window.GAME.isManualOpen || window.GAME.isLoreLogOpen) return;
 
-    // Manejo de parpadeo de linterna cuando recibe daño
+    // ── Parpadeo de linterna al recibir daño ───────────────────────────────
     if (this.flashlight && this.flashlightOn) {
       if (this.flashlightFlickerTimer > 0) {
         this.flashlightFlickerTimer--;
-        this.flashlight.visible = Math.random() > 0.35; // 35% de probabilidad de apagarse por frame
-        if (this.flashlightFlickerTimer === 0) {
-          this.flashlight.visible = true; // restaurar
-        }
+        this.flashlight.visible = Math.random() > 0.35;
+        if (this.flashlightFlickerTimer === 0) this.flashlight.visible = true;
       } else {
         this.flashlight.visible = true;
       }
     }
 
-    // Calcular vector de movimiento
+    // ── Determinar estado de movimiento (sprint / crouch) ─────────────────
+    const isMoving = this.keys.w || this.keys.s || this.keys.a || this.keys.d;
+
+    // Agacharse tiene prioridad sobre sprint
+    this.isCrouching = this.keys.ctrl;
+
+    // Sprint: Shift + movimiento hacia adelante + no agachado + no exhausto
+    const canSprint = this.keys.shift && this.keys.w && !this.isCrouching && !this.sprintExhausted;
+    this.isSprinting = canSprint && isMoving;
+
+    // ── Gestión de Stamina ─────────────────────────────────────────────────
+    if (this.isSprinting) {
+      this.stamina = Math.max(0, this.stamina - this.staminaDrain);
+      if (this.stamina <= 0) {
+        this.sprintExhausted = true;
+        this.isSprinting = false;
+      }
+    } else {
+      this.stamina = Math.min(100, this.stamina + this.staminaRegen);
+      if (this.sprintExhausted && this.stamina >= 30) {
+        this.sprintExhausted = false; // recuperación mínima para volver a correr
+      }
+    }
+    // Actualizar barra de stamina en HUD
+    HUD.updateStamina(this.stamina, this.sprintExhausted);
+
+    // ── Velocidad objetivo según estado ───────────────────────────────────
+    let targetSpeed;
+    if (this.isSprinting)      targetSpeed = this.sprintSpeed;
+    else if (this.isCrouching) targetSpeed = this.crouchSpeed;
+    else                       targetSpeed = this.walkSpeed;
+
+    // ── FOV dinámico ───────────────────────────────────────────────────────
+    let targetFOV;
+    if (this.isSprinting)      targetFOV = this.sprintFOV;
+    else if (this.isCrouching) targetFOV = this.crouchFOV;
+    else                       targetFOV = this.baseFOV;
+
+    this.currentFOV += (targetFOV - this.currentFOV) * 0.08;
+    if (this.camera) this.camera.fov = this.currentFOV;
+    if (this.camera) this.camera.updateProjectionMatrix();
+
+    // ── Altura de cámara al agacharse ──────────────────────────────────────
+    const targetHeight = this.isCrouching ? this.crouchHeight : this.standHeight;
+    this.currentHeight += (targetHeight - this.currentHeight) * 0.12;
+
+    // ── Vector de dirección de movimiento ─────────────────────────────────
     const moveVector = new THREE.Vector3();
     if (this.keys.w) moveVector.z -= 1;
     if (this.keys.s) moveVector.z += 1;
     if (this.keys.a) moveVector.x -= 1;
     if (this.keys.d) moveVector.x += 1;
-
     moveVector.normalize();
 
-    // Efecto de pasos cuando el jugador se mueve
-    if (moveVector.length() > 0.1) {
+    // Rotar hacia la dirección de la cámara
+    const direction = new THREE.Vector3(moveVector.x, 0, moveVector.z);
+    direction.applyQuaternion(this.camera.quaternion);
+    direction.y = 0;
+    if (direction.lengthSq() > 0) direction.normalize();
+
+    // ── Inercia: interpolar velocidad hacia la dirección deseada ──────────
+    const targetVelocity = direction.clone().multiplyScalar(targetSpeed);
+    this.velocity.x += (targetVelocity.x - this.velocity.x) * this.acceleration;
+    this.velocity.z += (targetVelocity.z - this.velocity.z) * this.acceleration;
+
+    // Fricción cuando no hay input
+    if (!isMoving) {
+      this.velocity.x *= this.friction;
+      this.velocity.z *= this.friction;
+    }
+
+    // ── Colisión y aplicación de posición ─────────────────────────────────
+    const newPos = this.position.clone().add(this.velocity);
+    if (!MAP.checkCollision(newPos)) {
+      this.position.copy(newPos);
+    } else {
+      // Intentar deslizamiento en X o Z por separado
+      const newPosX = this.position.clone();
+      newPosX.x += this.velocity.x;
+      if (!MAP.checkCollision(newPosX)) {
+        this.position.x = newPosX.x;
+      } else {
+        this.velocity.x = 0;
+      }
+      const newPosZ = this.position.clone();
+      newPosZ.z += this.velocity.z;
+      if (!MAP.checkCollision(newPosZ)) {
+        this.position.z = newPosZ.z;
+      } else {
+        this.velocity.z = 0;
+      }
+    }
+
+    // ── Camera Bobbing mejorado ────────────────────────────────────────────
+    const speed = this.velocity.length();
+    const bobFrequency = this.isSprinting ? 0.24 : (this.isCrouching ? 0.08 : 0.15);
+    const targetBobAmp  = isMoving
+      ? (this.isSprinting ? 0.13 : (this.isCrouching ? 0.03 : 0.07))
+      : 0;
+
+    // Amplitude se interpola suavemente
+    this.bobAmount += (targetBobAmp - this.bobAmount) * 0.1;
+
+    if (speed > 0.003 || this.bobAmount > 0.001) {
+      this.bobTime += bobFrequency;
+    }
+
+    // Sonido de pasos adaptado a la velocidad
+    if (isMoving && speed > 0.003) {
       this.footstepCounter++;
-      if (this.footstepCounter > 8) { // Reproducir cada cierto número de frames
+      const footstepThreshold = this.isSprinting ? 5 : (this.isCrouching ? 14 : 9);
+      if (this.footstepCounter > footstepThreshold) {
         AUDIO.playFootstep();
         this.footstepCounter = 0;
       }
     } else {
-      this.footstepCounter = 0; // Reset cuando no hay movimiento
+      this.footstepCounter = 0;
     }
 
-    // Rotar dirección de movimiento para que coincida con la vista de la cámara
-    const direction = new THREE.Vector3(moveVector.x, 0, moveVector.z);
-    direction.applyQuaternion(this.camera.quaternion);
-    direction.y = 0; // Bloquear altura en plano horizontal
-    direction.normalize();
-
-    // Nueva posición propuesta
-    const velocity = direction.multiplyScalar(this.moveSpeed);
-    const newPos = this.position.clone().add(velocity);
-
-    // Validar colisión antes de aplicar movimiento
-    if (!MAP.checkCollision(newPos)) {
-      this.position.copy(newPos);
-
-      // Efecto premium de balanceo de cámara (Camera Bobbing) al caminar
-      if (this.keys.w || this.keys.s || this.keys.a || this.keys.d) {
-        this.bobTime += 0.15;
-        this.camera.position.copy(this.position);
-        this.camera.position.y += Math.sin(this.bobTime) * 0.08; // Balanceo suave
-      } else {
-        this.camera.position.copy(this.position);
-      }
+    // Aplicar posición final con altura y bobbing
+    this.camera.position.copy(this.position);
+    this.camera.position.y = this.currentHeight + Math.sin(this.bobTime) * this.bobAmount;
+    // Leve balanceo lateral al correr
+    if (this.isSprinting) {
+      this.camera.position.x += Math.sin(this.bobTime * 0.5) * 0.025;
     }
 
-    // Verificar cercanía a elementos interactuables
+    // ── Verificar cercanía a elementos interactuables ──────────────────────
     this.checkInteractions();
 
-    // Auto infectar levemente si la proximidad al vacío es crítica
-    // (NXVL-0 drena cordura/vida)
+    // ── Proximidad al vacío / NXVL-0 ──────────────────────────────────────
     if (window.GAME.voidEnemy) {
       const distToVoid = this.position.distanceTo(window.GAME.voidEnemy.mesh.position);
       HUD.updateVoidProximity(distToVoid);
-
       if (distToVoid < 2.5) {
         this.damage(0.4, 'void');
       }

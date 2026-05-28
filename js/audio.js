@@ -630,6 +630,184 @@ class AudioSystem {
     src.stop(now + duration);
   }
 
+  _playNoiseBurstAt(duration, filterFreq, volume, time, type = 'lowpass') {
+    if (!this.ctx || this.isMuted) return;
+    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.setValueAtTime(filterFreq, time);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(volume, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterVolume);
+    src.start(time);
+    src.stop(time + duration);
+  }
+
+  // Sonido de golpe seco y realista en puerta pesada (sin ruiditos raros)
+  playDoorBanging() {
+    if (!this.ctx) this.init();
+    if (this.isMuted) return;
+    const now = this.ctx.currentTime;
+
+    const playRealBang = (timeOffset, intensity) => {
+      const t = now + timeOffset;
+      const vol = 0.8 * intensity;
+
+      // 1) Impacto de frecuencias graves (Cuerpo del golpe como un bombo profundo)
+      const osc = this.ctx.createOscillator();
+      const gainOsc = this.ctx.createGain();
+      osc.type = 'sine';
+      // Cae rápidamente de 150Hz a 40Hz para dar el efecto de impacto sordo
+      osc.frequency.setValueAtTime(150, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+      
+      gainOsc.gain.setValueAtTime(vol, t);
+      gainOsc.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+      osc.connect(gainOsc);
+      gainOsc.connect(this.masterVolume);
+      osc.start(t);
+      osc.stop(t + 0.3);
+
+      // 2) Impacto de banda ancha (El ruido del choque seco contra la superficie)
+      const bufferSize = this.ctx.sampleRate * 0.4;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        // Ruido rosa aproximado para mayor realismo (menos agudos que ruido blanco)
+        const white = Math.random() * 2 - 1;
+        output[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = output[i];
+        output[i] *= 3.5; // compensar volumen
+      }
+
+      const noiseSrc = this.ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuffer;
+
+      // Filtro pasa-bajos para quitar el brillo falso y dejar un ruido sordo
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(800, t); // Frecuencia de corte baja
+      noiseFilter.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(vol * 1.5, t);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+      noiseSrc.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(this.masterVolume);
+
+      noiseSrc.start(t);
+    };
+
+    let lastOut = 0; // Para el filtro de ruido rosa
+
+    // ── Ráfaga simple de 2 a 4 golpes contundentes ──
+    const numHits = Math.floor(UTILS.rand(2, 4));
+    let offset = 0;
+    for (let i = 0; i < numHits; i++) {
+      const gap = UTILS.rand(0.2, 0.45);
+      const intensity = UTILS.rand(0.7, 1.0);
+      playRealBang(offset, intensity);
+      offset += gap;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SISTEMA DE GOLPES CONTINUOS PRE-TERMINAL
+  // Golpes salvajes en bucle hasta completar la primera terminal (T1)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  startPreTerminalBanging() {
+    if (this._bangingActive) return;
+    this._bangingActive = true;
+    this._bangingIntensity = 0; // arranca suave, va subiendo
+
+    const scheduleNextBang = () => {
+      if (!this._bangingActive) return;
+
+      // La intensidad sube gradualmente (más golpes, más frecuentes)
+      this._bangingIntensity = Math.min(1, (this._bangingIntensity || 0) + 0.02);
+      const intensity = this._bangingIntensity;
+
+      // Intervalo entre ráfagas: se acorta con la intensidad
+      const minDelay = 1800 - intensity * 1200;  // 1800ms → 600ms
+      const maxDelay = 5000 - intensity * 2800;  // 5000ms → 2200ms
+      const delay = UTILS.rand(minDelay, maxDelay);
+
+      this.playDoorBanging();
+
+      // NOTA: Eliminamos los gruñidos y bufidos intercalados para enfocarnos solo en los golpes.
+
+      this._bangingTimeout = setTimeout(scheduleNextBang, delay);
+    };
+
+    // Primer golpe con un pequeño retraso para que no suene antes del juego
+    this._bangingTimeout = setTimeout(scheduleNextBang, UTILS.rand(2000, 4000));
+  }
+
+  stopPreTerminalBanging() {
+    this._bangingActive = false;
+    if (this._bangingTimeout) {
+      clearTimeout(this._bangingTimeout);
+      this._bangingTimeout = null;
+    }
+    // Sonido final: la criatura se retira (fade out dramático)
+    this.playZombieRetreat();
+  }
+
+  // Sonido sintetizado de zombi fúngico retirándose asustado/alejándose
+  playZombieRetreat() {
+    if (!this.ctx) this.init();
+    if (this.isMuted) return;
+    const now = this.ctx.currentTime;
+    
+    const duration = 2.0;
+    const osc = this.ctx.createOscillator();
+    const mod = this.ctx.createOscillator();
+    const modGain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.linearRampToValueAtTime(40, now + duration);
+    
+    mod.type = 'sine';
+    mod.frequency.setValueAtTime(35, now);
+    modGain.gain.setValueAtTime(80, now);
+    
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(80, now + duration);
+    
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.linearRampToValueAtTime(0.001, now + duration);
+    
+    mod.connect(modGain);
+    modGain.connect(osc.frequency);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterVolume);
+    
+    mod.start(now);
+    osc.start(now);
+    mod.stop(now + duration);
+    osc.stop(now + duration);
+    
+    this._playNoiseBurstAt(1.5, 300, 0.05, now + 0.2, 'bandpass');
+  }
+
   playMedbayThump() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;

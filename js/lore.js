@@ -61,6 +61,11 @@ class LoreSystem {
         return;
       }
 
+      // Liberar el cursor durante la cinemática
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+
       this.currentCutscene = window.LORE_DATA.cutscenes[cutsceneId];
       this.currentIndex = 0;
       this.overlay.classList.add('active');
@@ -165,10 +170,27 @@ class LoreSystem {
 
   endCutscene() {
     this.overlay.classList.remove('active');
-    if (this.resolveCallback) {
-      this.resolveCallback();
-      this.resolveCallback = null;
+    const resolve = this.resolveCallback;
+    this.resolveCallback = null;
+    if (resolve) {
+      resolve();
     }
+
+    // Auto-solicitar Pointer Lock al volver al juego
+    setTimeout(() => {
+      if (
+        window.GAME &&
+        window.GAME.state === 'PLAY' &&
+        !window.GAME.isTerminalOpen &&
+        !window.GAME.isManualOpen &&
+        !this.overlay.classList.contains('active')
+      ) {
+        const canvas = document.getElementById('game-canvas');
+        if (canvas && PLAYER.alive) {
+          canvas.requestPointerLock();
+        }
+      }
+    }, 100);
   }
 
   playAudioLog(logId) {

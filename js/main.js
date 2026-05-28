@@ -26,7 +26,7 @@ class GameManager {
     // 1. Configurar escena y renderizador 3D
     const canvas = document.getElementById('game-canvas');
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x020208, 0.095);
+    this.scene.fog = new THREE.FogExp2(0x010103, 0.16); // Niebla mucho más oscura y densa
 
     // Cámara con FOV cinematográfico
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -42,7 +42,7 @@ class GameManager {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Habilitar sombras suaves premium
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.85;
+    this.renderer.toneMappingExposure = 0.45; // Exposición reducida para ambiente de terror oscuro
 
     // Escuchar redimensionado
     window.addEventListener('resize', () => this.onWindowResize());
@@ -177,6 +177,7 @@ class GameManager {
     this.completedChallenges = [];
     this.escapeAuthorized = false;
     AMBIENT.stop();
+    AUDIO.stopPreTerminalBanging();  // Detener golpes si estaban activos
     LEVELS.resetProgress();
 
     // Resetear mapa 3D (cerrar compuertas, etc.)
@@ -204,6 +205,7 @@ class GameManager {
     LEVELS.spawnEnemiesForChapter(1);
     LEVELS.currentChapter = 1;
     AMBIENT.start();
+    AUDIO.startPreTerminalBanging();  // Reiniciar golpes salvajes del inicio
 
     // Capturar foco del puntero
     const canvas = document.getElementById('game-canvas');

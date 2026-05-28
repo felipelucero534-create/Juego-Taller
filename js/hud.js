@@ -40,6 +40,10 @@ class HUDSystem {
 
     this.startTime = Date.now();
     this.startTimer();
+
+    // Barra de stamina (sprint)
+    this.staminaBar = document.getElementById('hud-stamina-bar');
+    this.staminaFill = document.getElementById('hud-stamina-fill');
   }
 
   // Actualiza la salud del jugador en el HUD
@@ -68,6 +72,20 @@ class HUDSystem {
     } else {
       this.infectFill.classList.remove('danger');
     }
+  }
+
+  // Actualiza la barra de stamina del jugador
+  updateStamina(stamina, exhausted) {
+    if (!this.staminaFill || !this.staminaBar) return;
+    const pct = Math.max(0, Math.min(100, stamina));
+    this.staminaFill.style.width = `${pct}%`;
+
+    // Mostrar/ocultar barra: solo visible cuando se está gastando stamina
+    const visible = pct < 99;
+    this.staminaBar.style.opacity = visible ? '1' : '0';
+
+    this.staminaFill.classList.toggle('exhausted', exhausted);
+    this.staminaFill.classList.toggle('low', pct < 25 && !exhausted);
   }
 
   // Actualiza el nombre de la locación actual
