@@ -20,6 +20,11 @@ class MapSystem {
     this.escapeHatch = null;
     this.decorLights = [];
 
+    // Pre-allocated Box3 para checkCollision (evitar GC cada frame)
+    this._playerBox = new THREE.Box3();
+    this._tmpVecMin = new THREE.Vector3();
+    this._tmpVecMax = new THREE.Vector3();
+
     // Progresión vertical: filas altas = Ingeniería (sur), filas bajas = Puente/Escape (norte)
     this.zones = {
       eng:     { label: 'DECK 04 — INGENIERÍA',       color: 0x44ff88, rows: [14, 17], cols: [1, 11] },
@@ -262,10 +267,10 @@ class MapSystem {
       const pl = new THREE.PointLight(l.color, l.i, l.d);
       pl.position.set(l.x * this.tileSize, 3.5, l.z * this.tileSize);
       pl.castShadow = true;
-      pl.shadow.mapSize.width = 512;
-      pl.shadow.mapSize.height = 512;
+      pl.shadow.mapSize.width = 256;
+      pl.shadow.mapSize.height = 256;
       pl.shadow.camera.near = 0.5;
-      pl.shadow.camera.far = 30;
+      pl.shadow.camera.far = 20;
       pl.shadow.bias = -0.002;
       scene.add(pl);
     });
@@ -857,11 +862,15 @@ class MapSystem {
   }
 
   checkCollision(position, radius = 0.6) {
-    const playerBox = new THREE.Box3(
-      new THREE.Vector3(position.x - radius, 0.1, position.z - radius),
-      new THREE.Vector3(position.x + radius, this.wallHeight - 0.1, position.z + radius)
-    );
-    return this.colliders.some((c) => playerBox.intersectsBox(c));
+    this._tmpVecMin.set(position.x - radius, 0.1, position.z - radius);
+    this._tmpVecMax.set(position.x + radius, this.wallHeight - 0.1, position.z + radius);
+    this._playerBox.set(this._tmpVecMin, this._tmpVecMax);
+    const pb = this._playerBox;
+    const cols = this.colliders;
+    for (let i = 0; i < cols.length; i++) {
+      if (pb.intersectsBox(cols[i])) return true;
+    }
+    return false;
   }
 }
 

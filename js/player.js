@@ -10,10 +10,10 @@ class PlayerController {
     // ── Inventario interno ─────────────────────────────────────────────
     this.hardwarePieces = 0; // contador de piezas recolectadas
 
-    // ── Velocidades de movimiento ──────────────────────────────────────────
-    this.walkSpeed    = 0.08;   // velocidad base al caminar
-    this.sprintSpeed  = 0.155;  // velocidad al correr (Shift)
-    this.crouchSpeed  = 0.042;  // velocidad al agacharse (Ctrl)
+    // ── Velocidades de movimiento ────────────────────────────────────
+    this.walkSpeed    = 0.115;  // velocidad base al caminar
+    this.sprintSpeed  = 0.22;   // velocidad al correr (Shift)
+    this.crouchSpeed  = 0.06;   // velocidad al agacharse (Ctrl)
     this.moveSpeed    = this.walkSpeed;
 
     this.mouseSensitivity = 0.0022;
@@ -21,10 +21,10 @@ class PlayerController {
     this.position = new THREE.Vector3();
     this.rotation = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ para FPS look
 
-    // ── Inercia / aceleración suave ────────────────────────────────────────
+    // ── Inercia / aceleración suave ──────────────────────────────────
     this.velocity      = new THREE.Vector3(); // velocidad actual con inercia
-    this.acceleration  = 0.18;  // qué tan rápido llega a la velocidad máxima
-    this.friction      = 0.82;  // qué tan rápido frena (1 = sin fricción)
+    this.acceleration  = 0.26;  // qué tan rápido llega a la velocidad máxima
+    this.friction      = 0.80;  // qué tan rápido frena (1 = sin fricción)
 
     // ── Estado del Jugador ─────────────────────────────────────────────────
     this.health = 100;
@@ -71,6 +71,14 @@ class PlayerController {
     this.flashlightOn = false;
     this.flashlightFlickerTimer = 0;
     this.flashlightTarget = null;
+
+    // ── Vectores pre-asignados (evitar GC por frame) ───────────────────────
+    this._moveVec    = new THREE.Vector3();
+    this._dirVec     = new THREE.Vector3();
+    this._targetVel  = new THREE.Vector3();
+    this._newPos     = new THREE.Vector3();
+    this._newPosX    = new THREE.Vector3();
+    this._newPosZ    = new THREE.Vector3();
   }
 
   // Inicializa cámara, posición y controles
@@ -95,23 +103,23 @@ class PlayerController {
     this.bobTime = 0;
     this.bobAmount = 0;
 
-    // Inicializar Linterna SpotLight con sombras de alta calidad
+    // Linterna táctica: haz amplio y definido, sin desviación hacia arriba
+    // angle: ángulo del cono | penumbra: 0=borde duro, 1=borde difuso
     if (this.flashlight) {
       this.camera.remove(this.flashlight);
       if (this.flashlightTarget) this.camera.remove(this.flashlightTarget);
     }
-
-    this.flashlight = new THREE.SpotLight(0xffffee, 12.0, 50, Math.PI / 5, 0.3, 1.0);
+    this.flashlight = new THREE.SpotLight(0xfff5e0, 18.0, 55, Math.PI / 4, 0.12, 1.2);
     this.flashlight.castShadow = true;
-    this.flashlight.shadow.mapSize.width = 1024;
-    this.flashlight.shadow.mapSize.height = 1024;
+    this.flashlight.shadow.mapSize.width = 512;
+    this.flashlight.shadow.mapSize.height = 512;
     this.flashlight.shadow.camera.near = 0.1;
-    this.flashlight.shadow.camera.far = 50;
+    this.flashlight.shadow.camera.far = 55;
     this.flashlight.shadow.bias = -0.0015;
 
-    // Target de linterna frente a la cámara (elevado ligeramente para iluminar más alto)
+    // Target centrado directamente al frente de la cámara (sin offset vertical)
     this.flashlightTarget = new THREE.Object3D();
-    this.flashlightTarget.position.set(0, 0.15, -1);
+    this.flashlightTarget.position.set(0, 0, -1);
     this.camera.add(this.flashlightTarget);
     this.flashlight.target = this.flashlightTarget;
 
@@ -322,15 +330,17 @@ class PlayerController {
     else                       targetFOV = this.baseFOV;
 
     this.currentFOV += (targetFOV - this.currentFOV) * 0.08;
-    if (this.camera) this.camera.fov = this.currentFOV;
-    if (this.camera) this.camera.updateProjectionMatrix();
+    if (this.camera && Math.abs(this.camera.fov - this.currentFOV) > 0.01) {
+      this.camera.fov = this.currentFOV;
+      this.camera.updateProjectionMatrix();
+    }
 
     // ── Altura de cámara al agacharse ──────────────────────────────────────
     const targetHeight = this.isCrouching ? this.crouchHeight : this.standHeight;
     this.currentHeight += (targetHeight - this.currentHeight) * 0.12;
 
     // ── Vector de dirección de movimiento ─────────────────────────────────
-    const moveVector = new THREE.Vector3();
+    const moveVector = this._moveVec.set(0, 0, 0);
     if (this.keys.w) moveVector.z -= 1;
     if (this.keys.s) moveVector.z += 1;
     if (this.keys.a) moveVector.x -= 1;
@@ -338,13 +348,13 @@ class PlayerController {
     moveVector.normalize();
 
     // Rotar hacia la dirección de la cámara
-    const direction = new THREE.Vector3(moveVector.x, 0, moveVector.z);
+    const direction = this._dirVec.set(moveVector.x, 0, moveVector.z);
     direction.applyQuaternion(this.camera.quaternion);
     direction.y = 0;
     if (direction.lengthSq() > 0) direction.normalize();
 
     // ── Inercia: interpolar velocidad hacia la dirección deseada ──────────
-    const targetVelocity = direction.clone().multiplyScalar(targetSpeed);
+    const targetVelocity = this._targetVel.copy(direction).multiplyScalar(targetSpeed);
     this.velocity.x += (targetVelocity.x - this.velocity.x) * this.acceleration;
     this.velocity.z += (targetVelocity.z - this.velocity.z) * this.acceleration;
 
@@ -355,19 +365,19 @@ class PlayerController {
     }
 
     // ── Colisión y aplicación de posición ─────────────────────────────────
-    const newPos = this.position.clone().add(this.velocity);
+    const newPos = this._newPos.copy(this.position).add(this.velocity);
     if (!MAP.checkCollision(newPos)) {
       this.position.copy(newPos);
     } else {
       // Intentar deslizamiento en X o Z por separado
-      const newPosX = this.position.clone();
+      const newPosX = this._newPosX.copy(this.position);
       newPosX.x += this.velocity.x;
       if (!MAP.checkCollision(newPosX)) {
         this.position.x = newPosX.x;
       } else {
         this.velocity.x = 0;
       }
-      const newPosZ = this.position.clone();
+      const newPosZ = this._newPosZ.copy(this.position);
       newPosZ.z += this.velocity.z;
       if (!MAP.checkCollision(newPosZ)) {
         this.position.z = newPosZ.z;

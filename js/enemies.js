@@ -31,6 +31,10 @@ class Enemy {
         child.receiveShadow = true;
       }
     });
+
+    // Vectores pre-asignados para evitar GC por frame
+    this._proposedPos = new THREE.Vector3();
+    this._diffVec     = new THREE.Vector3();
   }
 
   // Crea la estructura visual 3D (a base de primitivas encajadas)
@@ -49,7 +53,7 @@ class Enemy {
     const dirX = Math.cos(this.wanderAngle);
     const dirZ = Math.sin(this.wanderAngle);
 
-    const proposedPos = this.mesh.position.clone();
+    const proposedPos = this._proposedPos.copy(this.mesh.position);
     proposedPos.x += dirX * this.speed;
     proposedPos.z += dirZ * this.speed;
 
@@ -64,14 +68,14 @@ class Enemy {
 
   // Persecución hacia el jugador
   chase(playerPos) {
-    const diff = new THREE.Vector3().subVectors(playerPos, this.mesh.position);
+    const diff = this._diffVec.subVectors(playerPos, this.mesh.position);
     diff.y = 0; // Mantener a nivel del suelo
     const dist = diff.length();
 
     diff.normalize();
 
-    const proposedPos = this.mesh.position.clone();
-    proposedPos.add(diff.multiplyScalar(this.speed));
+    const proposedPos = this._proposedPos.copy(this.mesh.position);
+    proposedPos.addScaledVector(diff, this.speed);
 
     if (!MAP.checkCollision(proposedPos, 0.5)) {
       this.mesh.position.copy(proposedPos);
@@ -514,7 +518,8 @@ class VoidEntity extends Enemy {
   update(playerPos) {
     if (this.ringOuter) this.ringOuter.rotation.y += 0.03;
     if (this.ringInner) this.ringInner.rotation.x += 0.04;
-    this.mesh.position.y = 1.3 + Math.sin(Date.now() * 0.003) * 0.2;
+    const t = performance.now() * 0.003;
+    this.mesh.position.y = 1.3 + Math.sin(t) * 0.2;
 
     if (PLAYER.alive) {
       const dist = this.mesh.position.distanceTo(playerPos);

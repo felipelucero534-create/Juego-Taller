@@ -38,9 +38,9 @@ class GameManager {
       powerPreference: "high-performance"
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Habilitar sombras suaves premium
+    this.renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoft es muy caro; PCF igual de bueno en ambientes oscuros
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.45; // Exposición reducida para ambiente de terror oscuro
 
@@ -242,26 +242,40 @@ class GameManager {
     requestAnimationFrame(() => this.animate());
 
     const now = performance.now();
-    const dt = (now - (this.lastFrame || now)) / 1000;
+    // Limitar dt para evitar saltos grandes al perder foco de ventana
+    const dt = Math.min((now - (this.lastFrame || now)) / 1000, 0.05);
     this.lastFrame = now;
 
     if (this.state === 'PLAY') {
       PLAYER.update();
       LEVELS.checkZoneChange(PLAYER.position);
 
-      this.enemies.forEach((enemy) => {
-        enemy.update(PLAYER.position);
-      });
+      const enemies = this.enemies;
+      const playerPos = PLAYER.position;
+      for (let i = 0; i < enemies.length; i++) {
+        enemies[i].update(playerPos);
+      }
 
-      RADAR.update();
-      AMBIENT.update(dt, PLAYER.position);
+      AMBIENT.update(dt, playerPos);
 
       // Actualizar esporas flotantes en el aire
       this.updateSpores(dt);
+
+      // Radar: actualizar a ~20fps en lugar de 60fps
+      this._radarTick = (this._radarTick || 0) + dt;
+      if (this._radarTick >= 0.05) {
+        RADAR.update();
+        this._radarTick = 0;
+      }
     }
 
+    // Luces decorativas: actualizar a ~30fps
     if (this.state === 'PLAY' && MAP.decorLights.length) {
-      MAP.updateLights(now * 0.001);
+      this._lightTick = (this._lightTick || 0) + dt;
+      if (this._lightTick >= 0.033) {
+        MAP.updateLights(now * 0.001);
+        this._lightTick = 0;
+      }
     }
     this.renderer.render(this.scene, this.camera);
   }
